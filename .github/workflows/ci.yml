@@ -45,7 +45,9 @@ jobs:
         working-directory: common/report_export_bridge
         run: uv run --locked --extra dev python -m pytest
       - name: 共通ツール・レポート一覧テスト
-        run: uv run --locked --project 04_traffic_analysis/parameter_management python -m pytest tools/tests tools/test_report_quality_check.py tools/test_site_improvement_report.py tools/test_validate_market_report.py tools/test_validate_measurement_report.py tools/test_validate_report_connections.py common/ga4_fetch/tests common/report_index/tests 03_external_research/web_research/competitor-ahrefs-analysis/tests
+        run: |
+          uv run --locked --project 04_traffic_analysis/parameter_management python -m pytest tools/tests tools/test_report_quality_check.py tools/test_site_improvement_report.py tools/test_validate_market_report.py tools/test_validate_measurement_report.py tools/test_validate_report_connections.py common/ga4_fetch/tests common/report_index/tests 03_external_research/web_research/competitor-ahrefs-analysis/tests --ignore=tools/tests/test_setup_status.py
+          uv run --locked --project 01_context_management python -m pytest tools/tests/test_setup_status.py
       - name: 公開前検査
         run: |
           uv run --locked --project 04_traffic_analysis/parameter_management python tools/check_links.py
