@@ -22,6 +22,6 @@
 
 ## 実行
 
-CIの対象と環境は、GitHubでは [.github/workflows/ci.yml](../.github/workflows/ci.yml)、Forgejoでは [.forgejo/workflows/ci.yml](../.forgejo/workflows/ci.yml) を参照する。ローカルでも各プロジェクトの環境で `python -m pytest` を実行する。実行時間の確認には `--durations=10` を追加する。
+CIの対象と環境は [.github/workflows/ci.yml](../.github/workflows/ci.yml) を参照する。ローカルでも各プロジェクトの環境で `python -m pytest` を実行する。実行時間の確認には `--durations=10` を追加する。
 
 テスト成功は、実データの分析内容や配布版の最新性を保証しない。レポートの確認時は、元Markdown・HTML/PDF・実際の配布ファイルを区別して確認する。
