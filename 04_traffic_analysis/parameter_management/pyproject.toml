@@ -1,0 +1,20 @@
+[project]
+name = "parameter-management"
+version = "0.1.0"
+description = "パラメータ管理エージェント - 集客計測の監査と utm パラメータ管理"
+requires-python = ">=3.11,<3.14"
+dependencies = [
+    "google-analytics-data>=0.18.0",
+    "google-auth>=2.20.0",
+    "google-api-python-client>=2.100.0",
+    "google-cloud-bigquery>=3.11.0",
+    "truststore>=0.10.0; sys_platform == 'win32'",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0.0",
+]
+
+[tool.uv]
+package = false

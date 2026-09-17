@@ -1,0 +1,12 @@
+# 施策履歴テンプレート → context/<client_id>/initiatives.yaml にコピーして記入
+initiatives:
+  - initiative_id: init_001
+    name: ""               # 施策名（必須）
+    period:
+      start: ""            # "YYYY-MM-DD"
+      end: ""              # "YYYY-MM-DD" / 継続中は null
+    description: ""        # 施策内容
+    related_kpi: ""        # kpis.yaml の kpi_id を参照
+    result: ""             # 実施後に結果サマリを追記
+    outputs:               # 関連アウトプットのパス
+      - ""

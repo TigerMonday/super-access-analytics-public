@@ -1,0 +1,6 @@
+# GTMも点検する場合のみ記入する（任意）。空のままなら fetch/run 実行時に
+# GTM取得（Phase 3）は自動実行されない（--gtm-account/--gtm-container を
+# 指定したときだけ走る）。記入例:
+#   gtm_account_id: "123456"
+#   gtm_container_id: "GTM-XXXXXXX"  # 公開IDはAPI用の数値containerIdへ自動解決
+gtm: {}

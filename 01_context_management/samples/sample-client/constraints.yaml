@@ -1,0 +1,18 @@
+gotchas:
+  - id: gotcha_001
+    title: CVR分母はB2B入口にlandingPageで絞る
+    detail: |
+      toC向けブログとtoB向けコーポレートが同一プロパティに混在。
+      全体セッションを分母にすると誤結論になる。landingPage で /lp/ 配下に絞ること。
+  - id: gotcha_002
+    title: 製品サイトはサブドメインでクロスドメイン計測
+    detail: app.example.com への遷移はクロスドメイン設定済み。referral 除外リストに登録済み。
+naming_conventions:
+  utm_source: 小文字スネークケース。媒体正式名（google, yahoo, meta）
+  utm_medium: cpc / display / email / social のみ許可
+  notes: 全社デフォルトは parameter_management/standards/naming-conventions.md
+open_questions:
+  - id: q_001
+    question: 資料DL後のリード化率が低い要因は？
+    hypothesis: フォーム項目過多の可能性（init_002 で検証中）
+    status: investigating

@@ -1,0 +1,18 @@
+ga4:
+  property_id: "123456789"
+  auth_method: sa
+gtm:
+  gtm_account_id: "123456"
+  gtm_container_id: "GTM-XXXXXXX"
+search_console:
+  site_url: "https://example.com/"
+bigquery:
+  project_id: "sample-gcp-project"
+  dataset: "analytics_123456789"
+ad_accounts:
+  - platform: google_ads
+    account_id: "123-456-7890"
+  - platform: yahoo_ads
+    account_id: "ABCDEFG"
+  - platform: meta_ads
+    account_id: "act_1234567890"  # leak-ok: Meta広告アカウントIDのダミー例（連番のプレースホルダで実IDではない）

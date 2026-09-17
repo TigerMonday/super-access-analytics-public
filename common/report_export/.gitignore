@@ -1,0 +1,10 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+
+# テスト
+.pytest_cache/
+
+# ビルド成果物
+*.egg-info/

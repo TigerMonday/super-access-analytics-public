@@ -1,0 +1,10 @@
+# 分析・アウトプット履歴テンプレート → context/<client_id>/analysis-history.yaml にコピーして記入
+# 各エージェントが完了時に1エントリ追記（findings引き継ぎ）。自動追記はPhase2。
+entries:
+  - date: ""               # "YYYY-MM-DD"
+    agent: ""              # 実行エージェント（例: parameter_management）
+    summary: ""            # 何をやったか
+    findings:              # 主要な発見（後続エージェントが参照）
+      - ""
+    outputs:
+      - ""

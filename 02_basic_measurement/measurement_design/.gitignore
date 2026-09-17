@@ -1,0 +1,32 @@
+# 認証情報・秘密情報（絶対にコミットしない）
+.env
+*.pem
+*.key
+
+# Python 実行環境
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# クライアント実行時生成ファイル
+# （実際の GA4/GTM データ・生成済み設計書を含むため除外）
+*/_data/
+*/report/
+*/docs/check-report.md
+*/docs/design-doc/
+
+# 実クライアントのローカル設定（property_id/GTM ID等）は保存・再利用するがコミットしない
+*/inputs/*.local.yaml
+!sample-client/inputs/*.local.yaml
+
+# 実クライアントの入力（KPI・画面導線）は各社固有の目標値等を含むため個人管理とし、
+# コミットしない。sample-client は動作確認用の共通サンプルのため対象外
+*/inputs/kpis.yaml
+*/inputs/screen-flow.yaml
+!sample-client/inputs/kpis.yaml
+!sample-client/inputs/screen-flow.yaml

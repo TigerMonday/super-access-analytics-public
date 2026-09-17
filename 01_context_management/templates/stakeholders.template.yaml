@@ -1,0 +1,7 @@
+# ステークホルダーテンプレート → context/<client_id>/stakeholders.yaml にコピーして記入
+stakeholders:
+  - name: ""               # 氏名（必須）
+    role: ""               # 役割（例: マーケ責任者（決裁者））
+    org: ""                # 所属
+    contact: ""            # 連絡先（任意）
+    notes: ""              # 特記事項（任意）

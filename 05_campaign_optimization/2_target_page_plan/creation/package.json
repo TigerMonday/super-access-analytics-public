@@ -1,0 +1,13 @@
+{
+  "name": "abtest-fv-capture",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "②施策作成（対象ページ選定＋改善案）: 対象ページのモバイルFVを撮影・把握するPlaywrightスクリプト",
+  "scripts": {
+    "fv": "node scripts/fv-capture.mjs"
+  },
+  "dependencies": {
+    "playwright": "^1.58.0"
+  }
+}

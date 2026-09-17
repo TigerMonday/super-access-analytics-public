@@ -1,0 +1,18 @@
+entries:
+  - date: "2026-04-01"
+    agent: parameter_management
+    summary: utm監査と基本分析を実施
+    findings:
+      - yahoo広告の utm_medium 未設定で (not set) 流入が15%発生
+      - メルマガ経由のCVRが最も高い（3.2%）
+      - gotcha_001 を適用し /lp/ 配下に分母を限定して算出
+    outputs:
+      - outputs/sample-client/2026-04-01_report.html
+  - date: "2026-04-20"
+    agent: adhoc_analysis
+    summary: 資料DL後のリード化率低下要因をアドホック分析
+    findings:
+      - フォーム到達率は高いが送信完了率が低い（フォーム離脱が主因）
+      - q_001 の仮説（項目過多）を支持。init_002 へ接続
+    outputs:
+      - outputs/sample-client/2026-04-20_adhoc_form-dropoff.md

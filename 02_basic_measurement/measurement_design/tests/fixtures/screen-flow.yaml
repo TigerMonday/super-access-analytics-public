@@ -1,0 +1,20 @@
+pages:
+  - page_id: page_top
+    name: トップページ
+    screen_type: top
+    url_pattern: "^/$"
+  - page_id: page_download
+    name: 資料ダウンロードページ
+    screen_type: form
+    url_pattern: "^/download"
+  - page_id: page_contact_complete
+    name: お問い合わせ完了ページ
+    screen_type: thanks
+    url_pattern: "^/contact/complete"
+flows:
+  - flow_id: flow_download
+    name: 資料ダウンロード導線
+    related_kpi: kpi_001
+    steps:
+      - page_id: page_top
+      - page_id: page_download

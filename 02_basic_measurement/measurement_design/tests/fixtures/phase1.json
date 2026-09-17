@@ -1,0 +1,28 @@
+{
+  "property": {
+    "name": "properties/123456789",
+    "display_name": "テストサイト",
+    "time_zone": "Asia/Tokyo",
+    "currency_code": "JPY"
+  },
+  "data_streams": [
+    {
+      "name": "properties/123456789/dataStreams/111",
+      "display_name": "テストサイト ウェブ",
+      "web_stream_data": { "measurement_id": "G-XXXXXXXX" }
+    }
+  ],
+  "data_retention": { "event_data_retention": "FOURTEEN_MONTHS" },
+  "google_signals": { "state": "GOOGLE_SIGNALS_ENABLED" },
+  "attribution": { "reporting_attribution_model": "PAID_AND_ORGANIC_CHANNELS_DATA_DRIVEN" },
+  "ads_links": [],
+  "custom_dimensions": [
+    { "name": "properties/123456789/customDimensions/1", "parameter_name": "user_type", "scope": "USER", "display_name": "ユーザー種別" }
+  ],
+  "custom_metrics": [],
+  "key_events": [
+    { "name": "properties/123456789/keyEvents/purchase", "event_name": "purchase" },
+    { "name": "properties/123456789/keyEvents/FormSubmit", "event_name": "FormSubmit" }
+  ],
+  "audiences": []
+}

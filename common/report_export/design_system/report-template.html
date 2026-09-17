@@ -1,0 +1,832 @@
+<!--
+  レポート用テンプレート。
+
+  デザインの正本は同ディレクトリの design-system.md。
+  <style> 内の「コアCSS」節は design-system.md からそのまま丸ごと埋め込んだもので、
+  このファイル側では改変しない（トーンを変えたいときは design-system.md を直す）。
+  そのあとの「report-template 固有」節だけがこのテンプレート独自のレイアウト
+  （表紙・目次・セクションごとの白い面・フッター）。
+
+  report_export（Python側、src/report_export/house_style.py）はこのファイルを読み込み、
+  9つのプレースホルダ文字列(二重アンダースコアで囲んだ大文字トークン。このコメントでは
+  str.replace の巻き込みを避けるため半角スペースを挟んで表記する)を置換して本文を流し込む。
+    TITLE            ... ドキュメントタイトル(H1相当)。<title>とヘッダの両方に入る
+    GENERATED_AT     ... 生成日時
+    COVER_LOGO_CSS   ... ロゴの.cover-logoルール一式。既定(--logo未指定)は空文字列＝
+                         ロゴのCSSごと出さない。--logo 指定時だけ、そのファイルを
+                         base64化したdata URIを背景に持つルールが入る（design-system.md §1参照）
+    COVER_LOGO_HTML  ... 表紙のロゴ要素(<div class="cover-logo">)。既定は空文字列＝
+                         要素自体を出さない(固定サイズの空箱が表紙に残らないようにする)。
+                         --logo 指定時だけ要素が入り、上のCOVER_LOGO_CSSと対で効く
+    ACCENT_OVERRIDE  ... 差し色の上書きCSS。既定は空文字列（コアCSSの --gold 系そのまま）。
+                         --accent-color 指定時だけ :root{ --gold:...; ... } が入り、
+                         後勝ちのカスケードでコアCSSの既定値を上書きする（コアCSS自体は書き換えない）
+    TOC              ... 画面追従の目次(.report-nav)。本文中のh2/h3から house_style.py が
+                         生成する。通常のページ内アンカー(#見出しid)で、クリックすると
+                         ブラウザが該当セクションまでスクロールする(html{scroll-behavior:smooth})
+    COVER_EXTRA      ... 本文の最初の見出しより前に置かれた前置き文(実行日・対象URL等)。
+                         表紙の面(.report-cover)にまとめて表示する。無ければ空文字列
+    BODY             ... Markdownから変換・整形済みの本文HTML。house_style.py が
+                         見出し(h1/h2)の境界でセクションに分割し、それぞれ独立した
+                         白い面(<section class="report-sheet report-body">)として並べたもの
+    ASSET_CREDIT     ... ピクトグラム使用時だけ入る出典・ライセンス情報。未使用時は空文字列
+
+  ---- 固定スライドと意味単位のページ送り ----
+  1面は1280x720の16:9で固定する。画面では面そのものを縦横比を保って縮尺表示し、
+  1面全体がビューポートへ収まるようにする。本文の再折り返しで帳尻を合わせないため、
+  ウィンドウ寸法が変わっても改ページ位置は変わらない。
+  セクション内の分割候補は、見出し、連続する段落、図表など意味のまとまりの境界だけ。
+  原稿では説明・判断・指標定義を表の前へ置く。表の行は分割せず、旧原稿の説明文や
+  表後に残る脚注は表と同じまとまりに残す。1まとまり自体が
+  1面へ収まらない場合は縮小や切り捨てをせず、はみ出しとして明示しPDF変換を止める。
+  図表が別面へ送られる場合も直前の考察を引き継ぎ、データだけの面を作らない。
+  ページ確定後は実使用高を測り、余白が多い面だけ文字と表の行高を2段階で広げる。
+  拡大で収まらなくなる場合は標準密度へ戻し、面の分割位置や内容は変えない。
+  末尾の<script>はこの意味単位の配置、表示密度、画面表示用の縮尺、TOC、次面ボタンを担う。
+-->
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:; style-src 'unsafe-inline'; script-src 'sha256-cim+kR5TZXa//+O1GuDAcOdIQ6cAOD1g1qBVfHtzhhA='; font-src data:; connect-src 'none'; base-uri 'none'; form-action 'none'">
+<title>__TITLE__</title>
+<style>
+/* ==================== コアCSS（design-system.md より、そのまま埋め込み） ==================== */
+:root{
+  --gold:#D4AF37; --gold-dark:#9A7B1F; --gold-bright:#E3C457; --gold-soft:#FBF6E8;
+  --gray-50:#fafafa; --gray-100:#f5f5f5; --gray-200:#e5e5e5; --gray-300:#d4d4d4;
+  --gray-400:#a3a3a3; --gray-500:#737373; --gray-700:#404040; --gray-900:#171717; --white:#ffffff;
+  --red:#b91c1c; --red-soft:#fef2f2; --green:#15803d; --green-soft:#f0fdf4;
+}
+*{ margin:0; padding:0; box-sizing:border-box; }
+html{ scroll-behavior:smooth; }
+body{
+  font-family:"Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic","Meiryo",sans-serif;
+  color:var(--gray-900); line-height:1.8; -webkit-font-smoothing:antialiased;
+  font-feature-settings:"palt" 1;
+}
+
+/* 見出し（成果物共通）─ ゴールドの縦罫は付けない。ラベルの短い横罫だけを差し色にする */
+.section-label{ font-size:11px; font-weight:700; letter-spacing:.16em; text-transform:uppercase; color:var(--gold-dark); display:flex; align-items:center; gap:8px; margin-bottom:10px; }
+.section-label::before{ content:""; width:16px; height:2px; background:var(--gold); flex:none; }
+.section-title{ font-size:23px; font-weight:800; line-height:1.4; letter-spacing:-.01em; color:var(--gray-900); margin-bottom:14px; }
+.section-summary{ font-size:14px; color:var(--gray-700); line-height:1.95; margin-bottom:20px; }
+
+/* 表（数値が主役。縦罫・外枠なし、等幅数字、ヘッダ下と表尾を黒罫で締める） */
+table.s-table{ width:100%; border-collapse:collapse; font-size:13px; margin-top:8px; font-variant-numeric:tabular-nums; font-feature-settings:"tnum" 1; }
+table.s-table th{ text-align:left; padding:8px 12px; font-weight:700; font-size:11px; letter-spacing:.04em; color:var(--gray-500); border-bottom:1.5px solid var(--gray-900); white-space:nowrap; }
+table.s-table td{ padding:9px 12px; border-bottom:1px solid var(--gray-200); vertical-align:top; color:var(--gray-700); }
+table.s-table tbody tr:last-child td{ border-bottom:1.5px solid var(--gray-900); }
+table.s-table th.r, table.s-table td.r{ text-align:right; white-space:nowrap; }
+table.s-table td.r{ font-weight:700; color:var(--gray-900); }
+table.s-table td:first-child code{ white-space:nowrap; }
+/* 1列目の下限幅。auto layoutでは3列目以降の説明文が長いほど1列目が圧縮され、
+   日本語は文字間で折り返せるため項目名が縦に何行も割れることがある(実データの
+   判定表で確認)。10emは長めの項目名でも1〜2行に収める値で、URL等で元から
+   幅が広い列(例: 02の集客レポート)には効かない(下限を上回っているため無風)。 */
+table.s-table td:first-child{ min-width:10em; }
+/* 「対象｜内容｜修正案｜重要度」の指摘表。内容列だけが幅を取り、修正案が
+   PDFで1文字ずつ縦に割れるのを防ぐ。見出し構成が一致する表にだけ付与する。 */
+table.s-table.action-table{ table-layout:fixed; }
+table.s-table.action-table th:nth-child(1){ width:18%; }
+table.s-table.action-table th:nth-child(2){ width:48%; }
+table.s-table.action-table th:nth-child(3){ width:25%; }
+table.s-table.action-table th:nth-child(4){ width:9%; }
+table.s-table.action-table td:first-child{ min-width:0; }
+table.s-table.action-table td:nth-child(-n+3){ overflow-wrap:anywhere; }
+table.s-table.action-table td:nth-child(-n+3) code{ white-space:normal; overflow-wrap:anywhere; }
+table.s-table.action-table th:last-child,
+table.s-table.action-table td:last-child{ white-space:nowrap; }
+
+/* 表のスクロール枠(列数が多く画面幅に収まらない表を包む)。
+   ページ全体ではなく表の中だけを横スクロールさせる。収まる幅の表ではスクロールバーは出ない。
+   印刷/PDF時は各テンプレの@media printでoverflow:visibleに戻し、右端が切れないようにする。 */
+.table-scroll{ overflow-x:auto; }
+
+/* ハイライト（薄グレー面のみ。ゴールドの縦罫は使わない） */
+.highlight-box{ background:var(--gray-50); padding:16px 20px; margin-top:16px; font-size:13.5px; line-height:1.9; color:var(--gray-900); }
+.highlight-box strong{ color:var(--gold-dark); font-weight:700; }
+
+/* コールアウト（薄グレー面。記号は黒地に白で、ゴールドを面に塗らない） */
+.callout{ display:flex; align-items:flex-start; gap:12px; margin-top:16px; padding:15px 18px; background:var(--gray-50); font-size:13px; line-height:1.9; color:var(--gray-700); }
+.callout-icon{ flex-shrink:0; width:24px; height:24px; background:var(--gray-900); color:var(--white); display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:700; }
+
+/* KPI（数値が主役。装飾線を置かず、数字を大きく等幅に） */
+.kpi-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-top:18px; }
+.kpi-box{ padding:16px 18px; text-align:left; background:var(--gray-50); }
+.kpi-box .kpi-label{ font-size:10px; font-weight:700; letter-spacing:.1em; color:var(--gray-500); margin-bottom:8px; }
+.kpi-box .kpi-value{ font-size:38px; font-weight:800; line-height:1; color:var(--gray-900); letter-spacing:-.02em; font-variant-numeric:tabular-nums; font-feature-settings:"tnum" 1; }
+.kpi-box .kpi-sub{ font-size:11px; margin-top:8px; color:var(--gray-500); }
+.kpi-box .kpi-sub.up,.metric-good{ color:var(--green); }
+.kpi-box .kpi-sub.down,.metric-bad{ color:var(--red); }
+
+/* カード（囲まない。薄グレー面で区切る） */
+.card{ padding:18px 20px; background:var(--gray-50); border:none; }
+.card .card-title{ font-size:14px; font-weight:800; color:var(--gray-900); margin-bottom:7px; letter-spacing:-.005em; }
+.card .card-body{ font-size:12.5px; color:var(--gray-700); line-height:1.85; }
+
+/* ファインディングカード（下罫で区切るだけ。ゴールドの縦罫は付けない） */
+.finding-card{ padding:15px 0; border-bottom:1px solid var(--gray-200); }
+.finding-card:last-child{ border-bottom:none; }
+.finding-card .fc-title{ font-size:13px; font-weight:800; margin-bottom:5px; color:var(--gray-900); letter-spacing:-.005em; }
+.finding-card .fc-body{ font-size:12.5px; color:var(--gray-700); line-height:1.85; }
+
+/* 考察（データと解釈を明確に分ける。箱の辺を強調しない） */
+.insight-box{ background:var(--gray-50); padding:20px 24px; margin:12px 0 22px; font-size:16px; line-height:1.9; color:var(--gray-900); }
+
+/* Markdownの表から生成するグラフ */
+.report-chart{ margin:18px 0 20px; padding:12px 8px 4px; background:var(--white); overflow-x:auto; }
+.report-chart svg{ width:100%; min-width:620px; height:auto; display:block; }
+.chart-title{ font-size:14px; font-weight:800; fill:var(--gray-900); }
+.chart-grid{ stroke:var(--gray-200); stroke-width:1; }
+.chart-label{ font-size:10px; fill:var(--gray-500); }
+.chart-legend{ font-size:10px; font-weight:700; fill:var(--gray-700); }
+.chart-legend-rate{ fill:var(--gold-dark); }
+.chart-bar{ fill:var(--gray-900); }
+.chart-line{ fill:none; stroke:var(--gold-dark); stroke-width:2.5; }
+.chart-point{ fill:var(--gold-dark); }
+.table-visual-title{ margin:14px 0 8px; font-size:14px; font-weight:800; color:var(--gray-900); }
+.table-bar-cell{ position:relative; isolation:isolate; display:block; margin:-9px -12px; padding:9px 12px; }
+.table-bar-cell::before{ content:""; position:absolute; inset:0 0 0 auto; width:var(--bar-width); background:var(--gold-soft); z-index:0; }
+.table-bar-value{ position:relative; z-index:1; }
+
+/* 定性情報の比較図。分類に色を割り当てず、1つの平らな構成として見せる */
+.visual-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:14px; margin:18px 0 22px; }
+.visual-card{ padding:18px 20px; background:var(--gray-50); }
+.visual-card.customer,.visual-card.competitor,.visual-card.company{ background:var(--gray-50); }
+.visual-card .visual-label{ font-size:11px; font-weight:800; letter-spacing:.08em; color:var(--gray-700); margin-bottom:8px; }
+.visual-card .visual-title{ font-size:16px; font-weight:800; line-height:1.5; color:var(--gray-900); margin-bottom:8px; }
+.visual-card .visual-copy{ font-size:13px; line-height:1.75; color:var(--gray-700); }
+.pictogram-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:14px; margin:18px 0 22px; }
+.pictogram-item{ display:flex; align-items:flex-start; gap:14px; padding:18px 20px; background:var(--gray-50); }
+.pictogram-mark{ flex:0 0 48px; width:48px; height:48px; color:var(--gray-900); }
+.pictogram-icon{ display:block; width:48px; height:48px; }
+.pictogram-text{ min-width:0; }
+.pictogram-title{ font-size:14px; font-weight:800; line-height:1.5; color:var(--gray-900); margin-bottom:5px; }
+.pictogram-copy{ font-size:12.5px; line-height:1.75; color:var(--gray-700); }
+.journey-flow{ display:grid; grid-template-columns:repeat(5,minmax(190px,1fr)); gap:14px; margin:18px 0 22px; overflow-x:auto; padding:2px 2px 12px; }
+.journey-step{ position:relative; min-width:190px; padding:16px; background:var(--gray-50); }
+.journey-step:not(:last-child)::after{ content:"→"; position:absolute; top:18px; right:-13px; z-index:1; color:var(--gray-500); font-weight:800; }
+.journey-stage{ font-size:12px; font-weight:800; color:var(--gray-900); margin-bottom:10px; }
+.journey-copy{ font-size:12.5px; line-height:1.7; color:var(--gray-700); margin-bottom:10px; }
+.journey-barrier,.journey-stimulus{ padding:9px 10px; margin-top:8px; font-size:11.5px; line-height:1.65; }
+.journey-barrier{ background:var(--red-soft); color:var(--red); }
+.journey-stimulus{ background:var(--green-soft); color:var(--green); }
+.journey-barrier strong,.journey-stimulus strong{ display:block; font-size:10px; letter-spacing:.06em; margin-bottom:2px; }
+.evidence-status{ display:inline-block; padding:2px 7px; font-size:10.5px; font-weight:800; white-space:nowrap; }
+.evidence-status.confirmed{ color:var(--gray-900); background:var(--gray-100); }
+.evidence-status.partial{ color:var(--gold-dark); background:var(--gold-soft); }
+.evidence-status.hypothesis{ color:var(--gray-700); background:var(--gray-100); }
+.status-card.ok{ background:var(--green-soft); }
+.status-card.watch{ background:var(--gray-50); }
+.status-card.action{ background:var(--red-soft); }
+.status-card.ok .visual-label{ color:var(--green); }
+.status-card.action .visual-label{ color:var(--red); }
+.priority-flow{ display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:14px; margin:18px 0 22px; }
+.priority-step{ position:relative; padding:18px 20px; background:var(--gray-50); }
+.priority-step.now,.priority-step.next,.priority-step.later{ background:var(--gray-50); }
+.priority-step.now .priority-label{ color:var(--gold-dark); }
+.priority-step .priority-label{ font-size:10.5px; font-weight:800; letter-spacing:.08em; color:var(--gray-700); margin-bottom:7px; }
+.priority-step .priority-title{ font-size:16px; font-weight:800; line-height:1.5; color:var(--gray-900); margin-bottom:7px; }
+.priority-step .priority-copy{ font-size:12.5px; line-height:1.75; color:var(--gray-700); }
+
+/* ==================== アクセントカラー上書き（--accent-color 指定時のみ、実行時にここへ差し込まれる） ====================
+   既定は空文字列。:root の再定義は後勝ちのカスケードでコアCSSの --gold 系を上書きする。
+   コアCSS本体（上のブロック）はどんな入力でも書き換えない。 */
+__ACCENT_OVERRIDE__
+
+/* ==================== report-template 固有（design-system.md §3・§4のレポート方針の実装） ==================== */
+
+html{ --report-slide-width:1280px; --report-slide-height:720px; --report-slide-scale:1; }
+
+html, body{ background:var(--gray-100); }
+html{ scroll-snap-type:y mandatory; }
+
+.sheet{
+  max-width:1440px;
+  margin:0 auto;
+  padding:32px;
+}
+
+/* ロゴは--logo指定時だけ、表紙のタイトル上に1回出す。
+   ルールごとhouse_style.pyが差し込む(未指定なら空文字列＝このCSS自体が出ない)。 */
+__COVER_LOGO_CSS__
+.doc-title{ font-size:28px; font-weight:800; line-height:1.45; letter-spacing:-.01em; color:var(--gray-900); }
+.doc-meta{ margin-top:10px; font-size:12px; color:var(--gray-500); }
+
+/* 本文（Markdown由来）。表・引用・見出しは共通部品クラスに寄せた上で、
+   段落・箇条書き・コード・リンク・区切り線・画像はグレースケールで自然に整形する。
+   実際のDOM上は要素名で縛らずクラス(.report-body)だけで当てる。 */
+.report-layout{ display:grid; grid-template-columns:230px minmax(0, 1fr); gap:24px; align-items:start; }
+.report-nav{ position:sticky; top:24px; max-height:calc(100vh - 48px); overflow:auto; padding:24px 20px; background:var(--white); }
+.toc-title{ font-size:11px; font-weight:800; letter-spacing:.14em; margin-bottom:10px; }
+.report-nav ol{ list-style:none; margin:0; padding:0; }
+.report-nav li{ margin:0; }
+.report-nav a{ display:block; padding:6px 8px; color:var(--gray-500); text-decoration:none; font-size:11px; line-height:1.45; }
+.report-nav a:hover,.report-nav a.is-current{ color:var(--gold-dark); font-weight:700; background:var(--gray-50); }
+.report-nav .toc-level-3 a{ padding-left:20px; font-size:10.5px; }
+.back-to-top{ margin-top:12px; font-weight:700; }
+
+/* 1面は1280x720固定。画面では.report-sheet-frameだけを縮め、面の中のレイアウト幅と
+   改ページ位置を変えない。意味単位の配置が終わる前は従来どおり内容高で表示する。 */
+.report-sheets{
+  min-width:0; display:flex; flex-direction:column; align-items:center; gap:24px;
+  counter-reset:report-slide;
+}
+.report-sheet-frame{
+  position:relative; flex:none; width:var(--report-slide-frame-width,var(--report-slide-width));
+  height:var(--report-slide-frame-height,var(--report-slide-height));
+  scroll-snap-align:start; scroll-snap-stop:always;
+}
+.report-sheet{
+  min-width:0; background:var(--white); position:relative; counter-increment:report-slide;
+}
+body.slides-ready .report-sheet-frame > .report-sheet,
+body.slides-building .report-sheet{
+  width:var(--report-slide-width); height:var(--report-slide-height);
+  padding:46px 72px 54px; transform-origin:top left;
+}
+body.slides-ready .report-sheet-frame > .report-sheet{
+  transform:scale(var(--report-slide-scale));
+}
+body.slides-ready .report-sheet:not(.has-overflow){ overflow:hidden; }
+.report-slide-content{ height:100%; min-height:0; }
+.semantic-block{ display:contents; }
+.report-sheet.has-overflow{
+  outline:4px solid var(--red); outline-offset:-4px; overflow:visible;
+}
+.report-sheet::after{
+  content:counter(report-slide); position:absolute; right:28px; bottom:18px;
+  font-size:10px; color:var(--gray-400); font-variant-numeric:tabular-nums;
+}
+.report-sheet::before{
+  content:"CONFIDENTIAL"; position:absolute; left:50%; bottom:18px; transform:translateX(-50%);
+  font-size:8px; font-weight:700; letter-spacing:.22em; color:var(--gray-400);
+}
+.slide-context{
+  margin-bottom:14px; padding-bottom:8px; border-bottom:1px solid var(--gray-200);
+  font-size:11px; font-weight:800; color:var(--gray-500); letter-spacing:.04em;
+}
+.visual-context{
+  margin:0 0 10px; padding:10px 14px; background:var(--gray-50);
+  color:var(--gray-700); font-size:13.5px; line-height:1.7;
+}
+.visual-context.insight-box{ margin:0 0 10px; padding:11px 15px; font-size:13.5px; line-height:1.7; }
+.visual-context p{ margin:0; color:inherit; font:inherit; }
+.visual-context-label{ margin-right:8px; color:var(--gray-900); font-weight:800; }
+.visual-context.is-duplicate-context{ display:none; }
+.report-cover{ padding-bottom:54px; }
+.report-footer{
+  display:none; padding:4px 0 24px; text-align:center; font-size:9px; font-weight:700;
+  letter-spacing:.22em; color:var(--gray-400);
+}
+.asset-credit{
+  padding:0 12px 8px; text-align:center; font-size:9px; line-height:1.5; color:var(--gray-500);
+}
+.asset-credit a{ color:inherit; }
+.asset-license-print{ display:none; }
+.next-sheet{
+  position:fixed; right:24px; bottom:24px; z-index:20; border:0; padding:11px 16px;
+  background:var(--gray-900); color:var(--white); font:700 12px/1.2 inherit; letter-spacing:.04em;
+  cursor:pointer; box-shadow:0 4px 16px rgba(0,0,0,.16);
+}
+.next-sheet:hover{ background:var(--gray-700); }
+.next-sheet:focus-visible{ outline:3px solid var(--gold); outline-offset:3px; }
+.slide-overflow-warning{
+  position:fixed; left:50%; top:12px; z-index:100; transform:translateX(-50%);
+  max-width:min(760px,calc(100vw - 32px)); padding:10px 14px; background:var(--red);
+  color:var(--white); font:700 12px/1.5 inherit; box-shadow:0 4px 16px rgba(0,0,0,.2);
+}
+
+.report-body{ min-width:0; }
+
+.report-body .section-title{ margin-top:0; }
+.report-body .sub-title{
+  font-size:15.5px; font-weight:700; line-height:1.6; color:var(--gray-900);
+  margin-top:26px; margin-bottom:8px;
+}
+.report-body .sub-title:first-child{ margin-top:0; }
+
+.report-body p{ font-size:15px; color:var(--gray-700); line-height:1.9; margin:12px 0; }
+.report-body ul,
+.report-body ol{ padding-left:1.4em; margin:10px 0; font-size:15px; color:var(--gray-700); line-height:1.85; }
+.report-body li{ margin:4px 0; }
+.report-body li > ul,
+.report-body li > ol{ margin:4px 0 4px 0; }
+
+.report-body a{ color:var(--gray-900); text-decoration:underline; text-underline-offset:2px; }
+.report-body a:hover{ color:var(--gray-500); }
+
+.report-body hr{ border:none; border-top:1px solid var(--gray-200); margin:24px 0; }
+
+.report-body code{
+  background:var(--gray-100); color:var(--gray-900); padding:1px 6px;
+  font-size:.9em; font-family:"SF Mono",Menlo,Consolas,monospace;
+}
+.report-body pre{
+  background:var(--gray-50); padding:14px 16px; margin:14px 0; overflow-x:auto;
+}
+.report-body pre code{ background:none; padding:0; font-size:12.5px; }
+
+.report-body img{ max-width:100%; height:auto; display:block; margin:16px auto; }
+
+.report-body table.s-table{ margin-bottom:0; }
+
+/* 章見出しと短い導入だけが1面に孤立し、直後の小見出し・表が次面へ送られる場合に使う。
+   情報を削らず縦余白だけを詰め、章の開始と最初の判断材料を同じ面に保つ。 */
+body.slides-building .report-sheet.chapter-start-compact.report-body .section-title,
+body.slides-ready .report-sheet.chapter-start-compact.report-body .section-title{
+  font-size:21px; line-height:1.35; margin-bottom:7px; padding-bottom:5px;
+}
+body.slides-building .report-sheet.chapter-start-compact.report-body .sub-title,
+body.slides-ready .report-sheet.chapter-start-compact.report-body .sub-title{
+  font-size:14px; line-height:1.45; margin-top:12px; margin-bottom:5px;
+}
+body.slides-building .report-sheet.chapter-start-compact.report-body p,
+body.slides-ready .report-sheet.chapter-start-compact.report-body p{
+  font-size:13px; line-height:1.55; margin:6px 0;
+}
+
+/* 固定面では表の情報密度だけを少し上げる。文字をページごとに縮小せず、全表で
+   同じ値を使うため、行高を理由に任意の位置で分割する必要がない。 */
+body.slides-building .report-body table.s-table,
+body.slides-ready .report-body table.s-table{ font-size:12.5px; line-height:1.45; margin-top:6px; }
+body.slides-building .report-body table.s-table th,
+body.slides-ready .report-body table.s-table th{ padding:6px 9px; font-size:11px; }
+body.slides-building .report-body table.s-table td,
+body.slides-ready .report-body table.s-table td{ padding:6px 9px; }
+body.slides-building .report-body .table-bar-cell,
+body.slides-ready .report-body .table-bar-cell{ margin:-6px -9px; padding:6px 9px; }
+body.slides-building .report-body .insight-box,
+body.slides-ready .report-body .insight-box{
+  margin:8px 0 10px; padding:12px 16px; font-size:14px; line-height:1.75;
+}
+body.slides-building .report-body .report-chart,
+body.slides-ready .report-body .report-chart{ margin:8px 0 10px; padding:6px 8px 2px; }
+
+/* 内容が少ない面では、詰め込み用の小さな文字をそのまま使わず、紙面を読みやすく使う。
+   ページ確定後に実使用高を測って付くクラスなので、意味単位や改ページ位置は変わらない。
+   横長表の安全性を優先し、左右余白と列幅はほぼ維持して縦方向を中心に広げる。 */
+body.slides-building .report-sheet.density-comfortable.report-body .section-title,
+body.slides-ready .report-sheet.density-comfortable.report-body .section-title{ font-size:26px; margin-bottom:16px; }
+body.slides-building .report-sheet.density-comfortable.report-body .sub-title,
+body.slides-ready .report-sheet.density-comfortable.report-body .sub-title{ font-size:17px; margin-top:28px; margin-bottom:10px; }
+body.slides-building .report-sheet.density-comfortable.report-body p,
+body.slides-building .report-sheet.density-comfortable.report-body ul,
+body.slides-building .report-sheet.density-comfortable.report-body ol,
+body.slides-ready .report-sheet.density-comfortable.report-body p,
+body.slides-ready .report-sheet.density-comfortable.report-body ul,
+body.slides-ready .report-sheet.density-comfortable.report-body ol{ font-size:15px; line-height:1.9; }
+body.slides-building .report-sheet.density-comfortable.report-body table.s-table,
+body.slides-ready .report-sheet.density-comfortable.report-body table.s-table{ font-size:12.5px; line-height:1.5; margin-top:8px; }
+body.slides-building .report-sheet.density-comfortable.report-body table.s-table th,
+body.slides-ready .report-sheet.density-comfortable.report-body table.s-table th{ padding:7px 9px; font-size:10.5px; }
+body.slides-building .report-sheet.density-comfortable.report-body table.s-table td,
+body.slides-ready .report-sheet.density-comfortable.report-body table.s-table td{ padding:7px 9px; }
+body.slides-building .report-sheet.density-comfortable.report-body .table-bar-cell,
+body.slides-ready .report-sheet.density-comfortable.report-body .table-bar-cell{ margin:-7px -9px; padding:7px 9px; }
+body.slides-building .report-sheet.density-comfortable.report-body .insight-box,
+body.slides-ready .report-sheet.density-comfortable.report-body .insight-box{ padding:13px 16px; font-size:13.5px; line-height:1.75; }
+body.slides-building .report-sheet.density-comfortable.report-body .visual-context,
+body.slides-ready .report-sheet.density-comfortable.report-body .visual-context{ padding:11px 15px; font-size:12.5px; line-height:1.7; }
+
+body.slides-building .report-sheet.density-roomy.report-body .section-title,
+body.slides-ready .report-sheet.density-roomy.report-body .section-title{ font-size:29px; margin-bottom:18px; }
+body.slides-building .report-sheet.density-roomy.report-body .sub-title,
+body.slides-ready .report-sheet.density-roomy.report-body .sub-title{ font-size:19px; margin-top:30px; margin-bottom:11px; }
+body.slides-building .report-sheet.density-roomy.report-body p,
+body.slides-building .report-sheet.density-roomy.report-body ul,
+body.slides-building .report-sheet.density-roomy.report-body ol,
+body.slides-ready .report-sheet.density-roomy.report-body p,
+body.slides-ready .report-sheet.density-roomy.report-body ul,
+body.slides-ready .report-sheet.density-roomy.report-body ol{ font-size:16px; line-height:1.95; }
+body.slides-building .report-sheet.density-roomy.report-body table.s-table,
+body.slides-ready .report-sheet.density-roomy.report-body table.s-table{ font-size:14px; line-height:1.55; margin-top:10px; }
+body.slides-building .report-sheet.density-roomy.report-body table.s-table th,
+body.slides-ready .report-sheet.density-roomy.report-body table.s-table th{ padding:12px 10px; font-size:12px; }
+body.slides-building .report-sheet.density-roomy.report-body table.s-table td,
+body.slides-ready .report-sheet.density-roomy.report-body table.s-table td{ padding:12px 10px; }
+body.slides-building .report-sheet.density-roomy.report-body .table-bar-cell,
+body.slides-ready .report-sheet.density-roomy.report-body .table-bar-cell{ margin:-12px -10px; padding:12px 10px; }
+body.slides-building .report-sheet.density-roomy.report-body .insight-box,
+body.slides-ready .report-sheet.density-roomy.report-body .insight-box{ padding:15px 18px; font-size:14.5px; line-height:1.8; }
+body.slides-building .report-sheet.density-roomy.report-body .visual-context,
+body.slides-ready .report-sheet.density-roomy.report-body .visual-context{ padding:12px 16px; font-size:13px; line-height:1.75; }
+
+@media print{
+  @page{ size:1280px 720px; margin:0; }
+  html, body{ background:var(--white); }
+  .sheet{ max-width:none; margin:0; padding:0; }
+  .report-layout{ display:block; }
+  .report-nav{ display:none; }
+  .report-sheets{ display:block; gap:0; }
+  .report-sheet-frame{ width:1280px !important; height:720px !important; break-after:page; page-break-after:always; }
+  .report-sheet-frame:last-of-type{ break-after:auto; page-break-after:auto; }
+  body.slides-ready .report-sheet-frame > .report-sheet{
+    width:1280px; height:720px; transform:none !important; overflow:hidden;
+  }
+  .report-body table.s-table tr{ break-inside:avoid; page-break-inside:avoid; }
+  .report-footer{ display:none; }
+  .next-sheet{ display:none; }
+  .slide-overflow-warning{ display:none; }
+  .asset-credit{ display:none; } /* PDFでは直後のライセンス付録に同じ出典を含める */
+  .asset-license-print{
+    display:block; width:1280px; height:720px; overflow:hidden;
+    break-before:page; page-break-before:always; padding:36px 52px;
+    color:var(--gray-700); font-size:7px; line-height:1.3; columns:3; column-gap:32px;
+  }
+  .asset-license-print pre{ margin:0; white-space:pre-wrap; font:inherit; }
+  .table-scroll{ overflow:visible; } /* 印刷はスクロールできないため戻す。切れるより見た目が崩れる方を許容する */
+  /* 画面では5段を横スクロールできるが、PDFはスクロールできない。全段をA4幅へ縮め、
+     5段目が右端で切れないようにする。 */
+  .journey-flow{ grid-template-columns:repeat(5,minmax(0,1fr)); gap:8px; overflow:visible; }
+  .journey-step{ min-width:0; padding:10px; }
+  .journey-stage{ font-size:10px; }
+  .journey-copy,.journey-barrier,.journey-stimulus{ font-size:9px; }
+}
+@media (prefers-reduced-motion:reduce){
+  html{ scroll-behavior:auto; scroll-snap-type:none; }
+}
+@media screen and (max-width:1100px){
+  .sheet{ padding:20px; }
+  .report-layout{ display:block; }
+  .report-nav{ display:none; }
+  .next-sheet{ right:12px; bottom:12px; padding:10px 13px; }
+}
+</style>
+</head>
+<body>
+<div class="sheet" id="report-top">
+  <div class="report-layout">
+  __TOC__
+  <div class="report-sheets">
+    <section class="report-sheet report-cover report-body">
+__COVER_LOGO_HTML__
+      <h1 class="doc-title">__TITLE__</h1>
+      <div class="doc-meta">生成日時: __GENERATED_AT__</div>
+__COVER_EXTRA__
+    </section>
+__BODY__
+__ASSET_CREDIT__
+    <div class="report-footer">CONFIDENTIAL</div>
+  </div>
+  </div>
+</div>
+<button class="next-sheet" type="button" aria-label="次の面へ">次の面 ↓</button>
+<script>
+(async () => {
+  const SLIDE_WIDTH = 1280;
+  const SLIDE_HEIGHT = 720;
+  const sheetsRoot = document.querySelector('.report-sheets');
+  const nextButton = document.querySelector('.next-sheet');
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+  document.body.classList.add('slides-building');
+
+  const waitForImage = image => {
+    if (image.complete) {
+      return typeof image.decode === 'function' ? image.decode().catch(() => {}) : Promise.resolve();
+    }
+    return new Promise(resolve => {
+      image.addEventListener('load', resolve, {once:true});
+      image.addEventListener('error', resolve, {once:true});
+    });
+  };
+  await Promise.all([...document.images].map(waitForImage));
+  if (document.fonts && document.fonts.ready) await document.fonts.ready;
+
+  const flushGroup = (groups, current) => {
+    if (!current.length) return [];
+    const group = document.createElement('div');
+    group.className = 'semantic-block';
+    current.forEach(node => group.appendChild(node));
+    groups.push(group);
+    return [];
+  };
+
+  const contextClone = node => {
+    if (!node) return null;
+    if (node.classList && node.classList.contains('insight-box')) {
+      const clone = node.cloneNode(true);
+      clone.classList.add('visual-context');
+      clone.removeAttribute('id');
+      clone.querySelectorAll('[id]').forEach(child => child.removeAttribute('id'));
+      return clone;
+    }
+    const context = document.createElement('div');
+    context.className = 'visual-context';
+    const copy = node.cloneNode(true);
+    copy.removeAttribute('id');
+    copy.querySelectorAll('[id]').forEach(child => child.removeAttribute('id'));
+    context.appendChild(copy);
+    return context;
+  };
+
+  const semanticGroups = source => {
+    const groups = [];
+    let current = [];
+    let mode = 'prose';
+    let insightContext = null;
+    let fallbackContext = null;
+    const ensureVisualContext = () => {
+      const sourceContext = insightContext || fallbackContext;
+      if (!sourceContext) return;
+      const sourceText = sourceContext.textContent.replace(/\s+/g, ' ').trim();
+      const alreadyPresent = current.some(item =>
+        item.matches('.insight-box,.visual-context') ||
+        item.textContent.replace(/\s+/g, ' ').trim() === sourceText
+      );
+      if (alreadyPresent) return;
+      const context = contextClone(sourceContext);
+      if (context) current.push(context);
+    };
+    [...source.children].forEach(node => {
+      const isHeading = node.matches('h1,h2,h3,h4');
+      const isTable = node.classList.contains('table-scroll');
+      const isChart = node.classList.contains('report-chart');
+      const isStandalone = node.matches(
+        '.pictogram-grid,.kpi-grid,.visual-grid,.journey-flow,.priority-flow'
+      );
+
+      if (isHeading) {
+        current = flushGroup(groups, current);
+        current.push(node);
+        mode = 'heading';
+        if (node.matches('h1,h2')) {
+          insightContext = null;
+        }
+        fallbackContext = null;
+        return;
+      }
+      if (node.classList.contains('insight-box')) {
+        insightContext = node.cloneNode(true);
+        current.push(node);
+        if (mode !== 'table') mode = 'prose';
+        return;
+      }
+      if (node.matches('p') && !fallbackContext) {
+        fallbackContext = node.cloneNode(true);
+      }
+      if (isChart) {
+        if (mode === 'table') {
+          current = flushGroup(groups, current);
+        }
+        ensureVisualContext();
+        current.push(node);
+        current = flushGroup(groups, current);
+        mode = 'prose';
+        return;
+      }
+      if (isStandalone) {
+        ensureVisualContext();
+        current.push(node);
+        current = flushGroup(groups, current);
+        mode = 'prose';
+        return;
+      }
+      if (isTable) {
+        ensureVisualContext();
+        current.push(node);
+        mode = 'table';
+        return;
+      }
+      if (mode === 'table') {
+        if (node.matches('p,ul,ol,.callout,.highlight-box,.insight-box')) {
+          current.push(node);
+          return;
+        }
+        current = flushGroup(groups, current);
+        mode = 'prose';
+      }
+      current.push(node);
+    });
+    flushGroup(groups, current);
+    return groups;
+  };
+
+  const sectionLabel = source => {
+    const heading = source.querySelector('h1,h2,h3');
+    return heading ? heading.textContent.replace(/\s+/g, ' ').trim() : '続き';
+  };
+
+  const createSlide = (source, label, sectionId, continuation) => {
+    const slide = document.createElement('section');
+    slide.className = source.className.replace(/\bhas-overflow\b/g, '').trim();
+    if (continuation) slide.classList.remove('report-cover');
+    if (sectionId) slide.dataset.sectionId = sectionId;
+    const content = document.createElement('div');
+    content.className = 'report-slide-content';
+    if (continuation) {
+      const context = document.createElement('div');
+      context.className = 'slide-context';
+      context.textContent = `${label}（続き）`;
+      content.appendChild(context);
+    }
+    slide.appendChild(content);
+    return {slide, content};
+  };
+
+  const overflows = content => content.scrollHeight > content.clientHeight + 1 ||
+    content.scrollWidth > content.clientWidth + 1 ||
+    [...content.querySelectorAll('.table-scroll')].some(tableFrame =>
+      tableFrame.scrollWidth > tableFrame.clientWidth + 1
+    );
+
+  const occupiedHeight = content => {
+    const contentTop = content.getBoundingClientRect().top;
+    const visibleNodes = [...content.querySelectorAll('*')].filter(node => {
+      const style = getComputedStyle(node);
+      return style.display !== 'none' && style.display !== 'contents' &&
+        style.visibility !== 'hidden' && !['absolute','fixed'].includes(style.position);
+    });
+    if (!visibleNodes.length) return 0;
+    return Math.max(...visibleNodes.map(node => node.getBoundingClientRect().bottom)) - contentTop;
+  };
+
+  const applyReadableDensity = sheet => {
+    if (sheet.classList.contains('report-cover') || sheet.classList.contains('has-overflow')) return;
+    const content = sheet.querySelector('.report-slide-content');
+    if (!content || !content.clientHeight) return;
+    const usage = occupiedHeight(content) / content.clientHeight;
+    const candidates = usage < 0.55
+      ? ['density-roomy','density-comfortable']
+      : usage < 0.75 ? ['density-comfortable'] : [];
+    for (const density of candidates) {
+      sheet.classList.add(density);
+      if (!overflows(content)) {
+        sheet.dataset.density = density.replace('density-', '');
+        return;
+      }
+      sheet.classList.remove(density);
+    }
+    sheet.dataset.density = 'standard';
+  };
+
+  const normalizeContext = node => node.textContent.replace(/\s+/g, ' ').trim();
+  const suppressDuplicateContext = (content, group) => {
+    const previous = new Set(
+      [...content.querySelectorAll(':scope > .semantic-block:not(:last-child) .insight-box, :scope > .semantic-block:not(:last-child) .visual-context')]
+        .map(normalizeContext)
+    );
+    group.querySelectorAll('.visual-context').forEach(context => {
+      if (previous.has(normalizeContext(context))) context.classList.add('is-duplicate-context');
+    });
+  };
+  const restoreContext = group => group.querySelectorAll('.is-duplicate-context')
+    .forEach(context => context.classList.remove('is-duplicate-context'));
+
+  const chapterIntroOnlyBlock = content => {
+    const blocks = [...content.querySelectorAll(':scope > .semantic-block')];
+    if (blocks.length !== 1) return null;
+    const block = blocks[0];
+    if (!block.querySelector(':scope > h1, :scope > h2')) return null;
+    if (block.querySelector('table,.table-scroll,.report-chart,.pictogram-grid,.kpi-grid,.visual-grid,.journey-flow,.priority-flow')) return null;
+    const text = block.textContent.replace(/\s+/g, ' ').trim();
+    return text.length <= 500 ? block : null;
+  };
+
+  const paginate = source => {
+    const label = sectionLabel(source);
+    const firstHeading = source.querySelector('h1[id],h2[id]');
+    const sectionId = firstHeading ? firstHeading.id : '';
+    const marker = document.createComment('report-slide-boundary');
+    source.before(marker);
+    const groups = semanticGroups(source);
+    const pages = [];
+    let target = createSlide(source, label, sectionId, false);
+    pages.push(target);
+    marker.before(target.slide);
+
+    groups.forEach(group => {
+      target.content.appendChild(group);
+      suppressDuplicateContext(target.content, group);
+      if (!overflows(target.content)) return;
+      const blocks = target.content.querySelectorAll(':scope > .semantic-block');
+      if (blocks.length > 1) {
+        group.remove();
+        restoreContext(group);
+        const introBlock = chapterIntroOnlyBlock(target.content);
+        if (introBlock) {
+          const orphanSlide = target.slide;
+          target = createSlide(source, label, sectionId, false);
+          target.slide.classList.add('chapter-start-compact');
+          pages[pages.length - 1] = target;
+          marker.before(target.slide);
+          target.content.appendChild(introBlock);
+          target.content.appendChild(group);
+          orphanSlide.remove();
+        } else {
+          target = createSlide(source, label, sectionId, true);
+          pages.push(target);
+          marker.before(target.slide);
+          target.content.appendChild(group);
+        }
+      }
+      if (overflows(target.content)) {
+        target.slide.classList.add('has-overflow');
+        target.slide.dataset.overflowLabel = label;
+      }
+    });
+
+    source.remove();
+    marker.remove();
+  };
+
+  if (sheetsRoot) {
+    [...sheetsRoot.querySelectorAll(':scope > .report-sheet')].forEach(paginate);
+  }
+
+  const sheets = [...document.querySelectorAll('.report-sheets > .report-sheet')];
+  sheets.forEach(applyReadableDensity);
+  sheets.forEach(sheet => {
+    const frame = document.createElement('div');
+    frame.className = 'report-sheet-frame';
+    sheet.replaceWith(frame);
+    frame.appendChild(sheet);
+  });
+  const frames = [...document.querySelectorAll('.report-sheet-frame')];
+
+  const layoutFrames = () => {
+    if (!sheetsRoot) return;
+    const availableWidth = Math.max(240, sheetsRoot.clientWidth);
+    const availableHeight = Math.max(180, window.innerHeight - 48);
+    const scale = Math.min(1, availableWidth / SLIDE_WIDTH, availableHeight / SLIDE_HEIGHT);
+    document.documentElement.style.setProperty('--report-slide-scale', String(scale));
+    frames.forEach(frame => {
+      frame.style.setProperty('--report-slide-frame-width', `${SLIDE_WIDTH * scale}px`);
+      frame.style.setProperty('--report-slide-frame-height', `${SLIDE_HEIGHT * scale}px`);
+    });
+  };
+
+  document.body.classList.remove('slides-building');
+  document.body.classList.add('slides-ready');
+  layoutFrames();
+  window.addEventListener('resize', layoutFrames, {passive:true});
+
+  const overflowingSheets = sheets.filter(sheet => sheet.classList.contains('has-overflow'));
+  const overflowLabels = overflowingSheets.map(sheet => sheet.dataset.overflowLabel || '見出しなし');
+  const densities = sheets.map(sheet => sheet.dataset.density || 'standard');
+  window.__reportSlideState = {width:SLIDE_WIDTH, height:SLIDE_HEIGHT, overflowLabels, densities};
+  document.body.dataset.slidesReady = 'true';
+  document.body.dataset.slideOverflowCount = String(overflowingSheets.length);
+  if (overflowingSheets.length) {
+    const warning = document.createElement('div');
+    warning.className = 'slide-overflow-warning';
+    warning.setAttribute('role', 'alert');
+    warning.textContent = `1スライドに収まらない意味単位があります: ${[...new Set(overflowLabels)].join('、')}`;
+    document.body.appendChild(warning);
+  }
+
+  const currentSheetIndex = () => {
+    let index = 0;
+    frames.forEach((frame, i) => { if (frame.getBoundingClientRect().top <= 32) index = i; });
+    return index;
+  };
+  const atDocumentEnd = () => window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 2;
+  const updateNextButton = () => {
+    if (!nextButton || !frames.length) return;
+    const atLast = atDocumentEnd() || currentSheetIndex() === frames.length - 1;
+    nextButton.textContent = atLast ? '先頭へ ↑' : '次の面 ↓';
+    nextButton.setAttribute('aria-label', atLast ? 'レポートの先頭へ戻る' : '次の面へ');
+    nextButton.dataset.target = atLast ? 'top' : 'next';
+  };
+  if (nextButton && frames.length) {
+    nextButton.addEventListener('click', () => {
+      const current = currentSheetIndex();
+      const options = {behavior:reducedMotion.matches ? 'auto' : 'smooth'};
+      if (atDocumentEnd() || current === frames.length - 1) window.scrollTo({...options, top:0});
+      else frames[current + 1].scrollIntoView({...options, block:'start'});
+    });
+    window.addEventListener('scroll', updateNextButton, {passive:true});
+    updateNextButton();
+  }
+  const links = [...document.querySelectorAll('.report-nav a[data-section]')];
+  if (!links.length) return;
+  const byId = new Map(links.map(a => [a.dataset.section, a]));
+  let manualSelectionUntil = 0;
+  const selectLink = current => {
+    links.forEach(a => a.classList.remove('is-current'));
+    if (current) current.classList.add('is-current');
+  };
+  links.forEach(a => a.addEventListener('click', event => {
+    manualSelectionUntil = Date.now() + 800;
+    selectLink(a);
+    const heading = document.getElementById(a.dataset.section);
+    const frame = heading && heading.closest('.report-sheet-frame');
+    if (frame) {
+      event.preventDefault();
+      frame.scrollIntoView({behavior:reducedMotion.matches ? 'auto' : 'smooth', block:'start'});
+    }
+  }));
+  const observer = new IntersectionObserver(entries => {
+    if (Date.now() < manualSelectionUntil) return;
+    const visible = entries.filter(e => e.isIntersecting).sort((a,b) => a.boundingClientRect.top-b.boundingClientRect.top)[0];
+    if (!visible) return;
+    const current = byId.get(visible.target.id);
+    selectLink(current);
+  }, {rootMargin:'-10% 0px -75% 0px'});
+  document.querySelectorAll('.report-body h2[id],.report-body h3[id]').forEach(h => observer.observe(h));
+})();
+</script>
+</body>
+</html>

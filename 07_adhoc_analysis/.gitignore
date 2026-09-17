@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+.uv/
+
+# 認証情報（絶対にコミットしない）
+*-sa-key.json
+sa-key.json
+.env
+.env.local
+
+# クライアントデータ
+outputs/
+samples/_*.md
+*.local.md
+
+# OS / Editor
+.DS_Store
+.vscode/
+.idea/

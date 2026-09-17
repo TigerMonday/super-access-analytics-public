@@ -1,0 +1,369 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:; style-src 'unsafe-inline'; script-src 'sha256-qnJEpnXEdZDu/yosJoyIUvvEo/Y96AvZg54Uq4O3v7Q='; font-src data:; connect-src 'none'; base-uri 'none'; form-action 'none'">
+<title>サンプルサイト 基本分析レポート</title>
+<style>
+
+:root{
+  --gold:#D4AF37; --gold-dark:#9A7B1F; --gold-bright:#E3C457; --gold-soft:#FBF6E8;
+  --gray-50:#fafafa; --gray-100:#f5f5f5; --gray-200:#e5e5e5; --gray-300:#d4d4d4;
+  --gray-400:#a3a3a3; --gray-500:#737373; --gray-700:#404040; --gray-900:#171717; --white:#ffffff;
+  --red:#b91c1c; --red-soft:#fef2f2; --green:#15803d; --green-soft:#f0fdf4;
+}
+*{ margin:0; padding:0; box-sizing:border-box; }
+html{ scroll-behavior:smooth; }
+body{
+  font-family:"Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic","Meiryo",sans-serif;
+  color:var(--gray-900); line-height:1.8; -webkit-font-smoothing:antialiased;
+  font-feature-settings:"palt" 1;
+}
+
+
+.section-label{ font-size:11px; font-weight:700; letter-spacing:.16em; text-transform:uppercase; color:var(--gold-dark); display:flex; align-items:center; gap:8px; margin-bottom:10px; }
+.section-label::before{ content:""; width:16px; height:2px; background:var(--gold); flex:none; }
+.section-title{ font-size:23px; font-weight:800; line-height:1.4; letter-spacing:-.01em; color:var(--gray-900); margin-bottom:14px; }
+.section-summary{ font-size:14px; color:var(--gray-700); line-height:1.95; margin-bottom:20px; }
+
+
+table.s-table{ width:100%; border-collapse:collapse; font-size:13px; margin-top:8px; font-variant-numeric:tabular-nums; font-feature-settings:"tnum" 1; }
+table.s-table th{ text-align:left; padding:8px 12px; font-weight:700; font-size:11px; letter-spacing:.04em; color:var(--gray-500); border-bottom:1.5px solid var(--gray-900); white-space:nowrap; }
+table.s-table td{ padding:9px 12px; border-bottom:1px solid var(--gray-200); vertical-align:top; color:var(--gray-700); }
+table.s-table tbody tr:last-child td{ border-bottom:1.5px solid var(--gray-900); }
+table.s-table th.r, table.s-table td.r{ text-align:right; white-space:nowrap; }
+table.s-table td.r{ font-weight:700; color:var(--gray-900); }
+table.s-table td:first-child code{ white-space:nowrap; }
+
+table.s-table td:first-child{ min-width:10em; }
+
+
+.table-scroll{ overflow-x:auto; }
+
+
+.highlight-box{ background:var(--gray-50); padding:16px 20px; margin-top:16px; font-size:13.5px; line-height:1.9; color:var(--gray-900); }
+.highlight-box strong{ color:var(--gold-dark); font-weight:700; }
+
+
+.callout{ display:flex; align-items:flex-start; gap:12px; margin-top:16px; padding:15px 18px; background:var(--gray-50); font-size:13px; line-height:1.9; color:var(--gray-700); }
+.callout-icon{ flex-shrink:0; width:24px; height:24px; background:var(--gray-900); color:var(--white); display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:700; }
+
+
+.kpi-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-top:18px; }
+.kpi-box{ padding:16px 18px; text-align:left; background:var(--gray-50); }
+.kpi-box .kpi-label{ font-size:10px; font-weight:700; letter-spacing:.1em; color:var(--gray-500); margin-bottom:8px; }
+.kpi-box .kpi-value{ font-size:38px; font-weight:800; line-height:1; color:var(--gray-900); letter-spacing:-.02em; font-variant-numeric:tabular-nums; font-feature-settings:"tnum" 1; }
+.kpi-box .kpi-sub{ font-size:11px; margin-top:8px; color:var(--gray-500); }
+.kpi-box .kpi-sub.up,.metric-good{ color:var(--green); }
+.kpi-box .kpi-sub.down,.metric-bad{ color:var(--red); }
+
+
+.card{ padding:18px 20px; background:var(--gray-50); border:none; }
+.card .card-title{ font-size:14px; font-weight:800; color:var(--gray-900); margin-bottom:7px; letter-spacing:-.005em; }
+.card .card-body{ font-size:12.5px; color:var(--gray-700); line-height:1.85; }
+
+
+.finding-card{ padding:15px 0; border-bottom:1px solid var(--gray-200); }
+.finding-card:last-child{ border-bottom:none; }
+.finding-card .fc-title{ font-size:13px; font-weight:800; margin-bottom:5px; color:var(--gray-900); letter-spacing:-.005em; }
+.finding-card .fc-body{ font-size:12.5px; color:var(--gray-700); line-height:1.85; }
+
+
+.insight-box{ background:var(--gray-50); padding:20px 24px; margin:12px 0 22px; font-size:16px; line-height:1.9; color:var(--gray-900); }
+
+
+.report-chart{ margin:18px 0 20px; padding:12px 8px 4px; background:var(--white); overflow-x:auto; }
+.report-chart svg{ width:100%; min-width:620px; height:auto; display:block; }
+.chart-title{ font-size:14px; font-weight:800; fill:var(--gray-900); }
+.chart-grid{ stroke:var(--gray-200); stroke-width:1; }
+.chart-label{ font-size:10px; fill:var(--gray-500); }
+.chart-legend{ font-size:10px; font-weight:700; fill:var(--gray-700); }
+.chart-bar{ fill:var(--gray-900); }
+.chart-line{ fill:none; stroke:var(--gold-dark); stroke-width:2.5; }
+.chart-point{ fill:var(--gold-dark); }
+.table-visual-title{ margin:14px 0 8px; font-size:14px; font-weight:800; color:var(--gray-900); }
+.table-bar-cell{ display:block; margin:-9px -12px; padding:9px 12px; background:linear-gradient(to left,var(--gold-soft) var(--bar-width),transparent var(--bar-width)); }
+
+
+.visual-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:14px; margin:18px 0 22px; }
+.visual-card{ padding:18px 20px; background:var(--gray-50); }
+.visual-card.customer,.visual-card.competitor,.visual-card.company{ background:var(--gray-50); }
+.visual-card .visual-label{ font-size:11px; font-weight:800; letter-spacing:.08em; color:var(--gray-700); margin-bottom:8px; }
+.visual-card .visual-title{ font-size:16px; font-weight:800; line-height:1.5; color:var(--gray-900); margin-bottom:8px; }
+.visual-card .visual-copy{ font-size:13px; line-height:1.75; color:var(--gray-700); }
+.journey-flow{ display:grid; grid-template-columns:repeat(5,minmax(190px,1fr)); gap:14px; margin:18px 0 22px; overflow-x:auto; padding:2px 2px 12px; }
+.journey-step{ position:relative; min-width:190px; padding:16px; background:var(--gray-50); }
+.journey-step:not(:last-child)::after{ content:"→"; position:absolute; top:18px; right:-13px; z-index:1; color:var(--gray-500); font-weight:800; }
+.journey-stage{ font-size:12px; font-weight:800; color:var(--gray-900); margin-bottom:10px; }
+.journey-copy{ font-size:12.5px; line-height:1.7; color:var(--gray-700); margin-bottom:10px; }
+.journey-barrier,.journey-stimulus{ padding:9px 10px; margin-top:8px; font-size:11.5px; line-height:1.65; }
+.journey-barrier{ background:var(--red-soft); color:var(--red); }
+.journey-stimulus{ background:var(--green-soft); color:var(--green); }
+.journey-barrier strong,.journey-stimulus strong{ display:block; font-size:10px; letter-spacing:.06em; margin-bottom:2px; }
+.evidence-status{ display:inline-block; padding:2px 7px; font-size:10.5px; font-weight:800; white-space:nowrap; }
+.evidence-status.confirmed{ color:var(--gray-900); background:var(--gray-100); }
+.evidence-status.partial{ color:var(--gold-dark); background:var(--gold-soft); }
+.evidence-status.hypothesis{ color:var(--gray-700); background:var(--gray-100); }
+.status-card.ok{ background:var(--green-soft); }
+.status-card.watch{ background:var(--gray-50); }
+.status-card.action{ background:var(--red-soft); }
+.status-card.ok .visual-label{ color:var(--green); }
+.status-card.action .visual-label{ color:var(--red); }
+.priority-flow{ display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:14px; margin:18px 0 22px; }
+.priority-step{ position:relative; padding:18px 20px; background:var(--gray-50); }
+.priority-step.now,.priority-step.next,.priority-step.later{ background:var(--gray-50); }
+.priority-step.now .priority-label{ color:var(--gold-dark); }
+.priority-step .priority-label{ font-size:10.5px; font-weight:800; letter-spacing:.08em; color:var(--gray-700); margin-bottom:7px; }
+.priority-step .priority-title{ font-size:16px; font-weight:800; line-height:1.5; color:var(--gray-900); margin-bottom:7px; }
+.priority-step .priority-copy{ font-size:12.5px; line-height:1.75; color:var(--gray-700); }
+
+
+
+
+
+
+html, body{ background:var(--gray-100); }
+html{ scroll-snap-type:y proximity; }
+
+.sheet{
+  max-width:1440px;
+  margin:0 auto;
+  padding:32px;
+}
+
+
+
+.doc-title{ font-size:28px; font-weight:800; line-height:1.45; letter-spacing:-.01em; color:var(--gray-900); }
+.doc-meta{ margin-top:10px; font-size:12px; color:var(--gray-500); }
+
+
+.report-layout{ display:grid; grid-template-columns:250px minmax(0, 1fr); gap:32px; align-items:start; }
+.report-nav{ position:sticky; top:24px; max-height:calc(100vh - 48px); overflow:auto; padding:24px 20px; background:var(--white); }
+.toc-title{ font-size:11px; font-weight:800; letter-spacing:.14em; margin-bottom:10px; }
+.report-nav ol{ list-style:none; margin:0; padding:0; }
+.report-nav li{ margin:0; }
+.report-nav a{ display:block; padding:6px 8px; color:var(--gray-500); text-decoration:none; font-size:11px; line-height:1.45; }
+.report-nav a:hover,.report-nav a.is-current{ color:var(--gold-dark); font-weight:700; background:var(--gray-50); }
+.report-nav .toc-level-3 a{ padding-left:20px; font-size:10.5px; }
+.back-to-top{ margin-top:12px; font-weight:700; }
+
+
+.report-sheets{ min-width:0; display:flex; flex-direction:column; gap:24px; counter-reset:report-slide; }
+.report-sheet{
+  min-width:0; min-height:calc(100vh - 64px); background:var(--white); padding:56px 64px 72px;
+  position:relative; scroll-snap-align:start; counter-increment:report-slide;
+}
+.report-sheet::after{
+  content:counter(report-slide); position:absolute; right:28px; bottom:18px;
+  font-size:10px; color:var(--gray-400); font-variant-numeric:tabular-nums;
+}
+.slide-context{
+  margin-bottom:24px; padding-bottom:10px; border-bottom:1px solid var(--gray-200);
+  font-size:12px; font-weight:800; color:var(--gray-500); letter-spacing:.04em;
+}
+.report-cover{ padding-bottom:40px; }
+.report-footer{
+  padding:4px 0 24px; text-align:center; font-size:9px; font-weight:700;
+  letter-spacing:.22em; color:var(--gray-400);
+}
+
+.report-body{ min-width:0; }
+
+.report-body .section-title{ margin-top:0; }
+.report-body .sub-title{
+  font-size:15.5px; font-weight:700; line-height:1.6; color:var(--gray-900);
+  margin-top:26px; margin-bottom:8px;
+}
+.report-body .sub-title:first-child{ margin-top:0; }
+
+.report-body p{ font-size:14px; color:var(--gray-700); line-height:1.95; margin:12px 0; }
+.report-body ul,
+.report-body ol{ padding-left:1.4em; margin:10px 0; font-size:14px; color:var(--gray-700); line-height:1.9; }
+.report-body li{ margin:4px 0; }
+.report-body li > ul,
+.report-body li > ol{ margin:4px 0 4px 0; }
+
+.report-body a{ color:var(--gray-900); text-decoration:underline; text-underline-offset:2px; }
+.report-body a:hover{ color:var(--gray-500); }
+
+.report-body hr{ border:none; border-top:1px solid var(--gray-200); margin:24px 0; }
+
+.report-body code{
+  background:var(--gray-100); color:var(--gray-900); padding:1px 6px;
+  font-size:.9em; font-family:"SF Mono",Menlo,Consolas,monospace;
+}
+.report-body pre{
+  background:var(--gray-50); padding:14px 16px; margin:14px 0; overflow-x:auto;
+}
+.report-body pre code{ background:none; padding:0; font-size:12.5px; }
+
+.report-body img{ max-width:100%; height:auto; display:block; margin:16px auto; }
+
+.report-body table.s-table{ margin-bottom:0; }
+
+@media print{
+  html, body{ background:var(--white); }
+  .sheet{ max-width:none; margin:0; padding:0; }
+  .report-layout{ display:block; }
+  .report-nav{ display:none; }
+  .report-sheets{ display:block; gap:0; }
+  
+  .report-sheet{ min-height:0; break-after:page; page-break-after:always; }
+  .report-sheet:last-of-type{ break-after:auto; page-break-after:auto; }
+  .report-sheet::after{ display:none; }
+  .report-body table.s-table tr{ break-inside:avoid; page-break-inside:avoid; }
+  .report-footer{ display:none; } 
+  .table-scroll{ overflow:visible; } 
+
+  .journey-flow{ grid-template-columns:repeat(5,minmax(0,1fr)); gap:8px; overflow:visible; }
+  .journey-step{ min-width:0; padding:10px; }
+  .journey-stage{ font-size:10px; }
+  .journey-copy,.journey-barrier,.journey-stimulus{ font-size:9px; }
+}
+@media screen and (max-width:900px){
+  .sheet{ padding:20px; }
+  .report-layout{ display:block; }
+  .report-nav{ position:relative; top:auto; max-height:none; margin-bottom:20px; columns:2; }
+  .report-nav .toc-title,.report-nav .back-to-top{ column-span:all; }
+  .report-sheet{ padding:28px 20px; }
+  .kpi-grid{ grid-template-columns:1fr; }
+}
+</style>
+</head>
+<body>
+<div class="sheet" id="report-top">
+  <div class="report-layout">
+  <aside class="report-nav" aria-label="目次"><div class="toc-title">目次</div><ol><li class="toc-level-2"><a href="#_1" data-section="_1">目次</a></li><li class="toc-level-2"><a href="#_2" data-section="_2">分析サマリー</a></li><li class="toc-level-3"><a href="#_3" data-section="_3">今回確認できたこと</a></li><li class="toc-level-2"><a href="#1" data-section="1">1. 月次/週次推移</a></li><li class="toc-level-3"><a href="#_4" data-section="_4">月次</a></li><li class="toc-level-3"><a href="#12" data-section="12">週次（直近12週）</a></li><li class="toc-level-2"><a href="#2" data-section="2">2. チャネル別パフォーマンス（前年同期比つき）</a></li><li class="toc-level-2"><a href="#3-10" data-section="3-10">3. ランディングページ別（セッション上位10件）</a></li><li class="toc-level-2"><a href="#4-pv10" data-section="4-pv10">4. ページ別（PV上位10件。回遊も含めた人気ページ）</a></li><li class="toc-level-2"><a href="#5-mobile-desktop-tablet" data-section="5-mobile-desktop-tablet">5. デバイス別（mobile / desktop / tablet）</a></li><li class="toc-level-2"><a href="#6" data-section="6">6. 新規/リピーター別</a></li><li class="toc-level-2"><a href="#7-cv" data-section="7-cv">7. CVファネル</a></li><li class="toc-level-3"><a href="#form_submit" data-section="form_submit">★問い合わせ完了（form_submit）</a></li><li class="toc-level-3"><a href="#dlfile_download" data-section="dlfile_download">資料DL（file_download）</a></li><li class="toc-level-2"><a href="#8-cv" data-section="8-cv">8. CVはどこから来たか</a></li><li class="toc-level-3"><a href="#cv10" data-section="cv10">ランディングページ別（CV上位10件、セッション順位との比較）</a></li><li class="toc-level-3"><a href="#utm_source-utm_mediumcv10" data-section="utm_source-utm_mediumcv10">流入元別（utm_source / utm_medium、CV上位10件、セッション順位との比較）</a></li></ol><a class="back-to-top" href="#report-top">先頭へ戻る</a></aside>
+  <div class="report-sheets">
+    <section class="report-sheet report-cover report-body">
+
+      <h1 class="doc-title">サンプルサイト 基本分析レポート</h1>
+      <div class="doc-meta">生成日時: 2026-09-12 00:24</div>
+<p><strong>対象サイト</strong>: サンプルサイト（https://example.co.jp/）</p>
+<p><strong>分析日</strong>: 2026-08-25</p>
+<p><strong>対象期間（GA4データ）</strong>: 2025-08-25 ～ 2026-08-24</p>
+<p><strong>比較期間（前年同期）</strong>: 2024-08-25 ～ 2025-08-24</p>
+<p><strong>キーイベント</strong>: <code>form_submit</code>（問い合わせ完了）、<code>file_download</code>（資料DL）</p>
+<p><strong>主に見ていく指標</strong>: 問い合わせ完了（★は本文中でこのKPIを示す。資料DLよりも問い合わせを増やす方を優先して見ていく方針のため）</p>
+<div class="callout"><div class="callout-icon">!</div><div>⚠️ この出力例は、最終出力形式（Markdown 1ファイル、冒頭サマリ＋項目別詳細）の見本。
+数値・サイト名・URLはすべて架空のもので、実在のクライアントのデータではない。
+この例は端数日を含む期間を明示指定した過去の出力例。現在の標準期間は、直近の完了した12か月の月初〜月末で、比較期間は前年の同じ暦日範囲になる。
+このクライアントはCVが2件（問い合わせ完了・資料DL）あり、01の <code>kpis.yaml</code> で問い合わせ完了を
+優先度1（主に見ていく指標）に設定済みという想定。CVが1件しかない、または優先度が未設定の
+クライアントでは、確認済みのCVイベント1本を★印無しで出力する（README.md参照）。</div></div>
+<hr>
+
+    </section>
+<section class="report-sheet report-body"><h2 id="_1" class="section-title">目次</h2>
+<p><a href="#_2" rel="noopener noreferrer">分析サマリー</a></p>
+<ol>
+<li><a href="#1" rel="noopener noreferrer">月次・週次推移</a></li>
+<li><a href="#2" rel="noopener noreferrer">チャネル別パフォーマンス</a></li>
+<li><a href="#3-10" rel="noopener noreferrer">ランディングページ別</a></li>
+<li><a href="#4-pv10" rel="noopener noreferrer">ページ別</a></li>
+<li><a href="#5-mobile-desktop-tablet" rel="noopener noreferrer">デバイス別</a></li>
+<li><a href="#6" rel="noopener noreferrer">新規/リピーター別</a></li>
+<li><a href="#7-cv" rel="noopener noreferrer">CVファネル</a></li>
+<li><a href="#8-cv" rel="noopener noreferrer">CVはどこから来たか</a></li>
+</ol>
+<div class="callout"><div class="callout-icon">!</div><div>01の計測環境レジストリにBigQueryのGA4エクスポート設定が無いクライアントという想定のため、
+項目9（CVパス精度版）の見出しは作っていない（設定があれば9番目の項目として追加される）。
+代わりに本文末尾（項目8の直後）に、CVの経路については確認していない旨の一文を番号無しで
+添えている（黙って何も触れずに終わらせないため）。</div></div>
+<hr>
+</section><section class="report-sheet report-body"><h2 id="_2" class="section-title">分析サマリー</h2>
+<div class="insight-box"><strong>考察:</strong> セッションは前年同期比+8.6%、CV合計は+11.2%で堅調に見えるが、内訳を見ると明暗が分かれる。★問い合わせ完了は+25.7%と大きく伸びた一方、資料DLは-28.7%と減少しており、合算の数字だけでは資料DLの落ち込みが隠れていた。優先して見ていく問い合わせ完了が伸びている点は評価できるが、<code>(not set)</code> 流入とLinkedIn広告のutm未設定が計測面の課題として残る。</div>
+<div class="table-scroll"><table class="s-table"><thead><tr><th>指標</th><th class="r">当期</th><th class="r">前年同期</th><th class="r">増減</th></tr></thead><tbody><tr><td>セッション</td><td class="r">152,400</td><td class="r">140,300</td><td class="r">+8.6%</td></tr><tr><td>ユーザー</td><td class="r">118,600</td><td class="r">109,800</td><td class="r">+8.0%</td></tr><tr><td>CV: ★問い合わせ完了</td><td class="r">1,232</td><td class="r">980</td><td class="r">+25.7%</td></tr><tr><td>CV: 資料DL</td><td class="r">254</td><td class="r">356</td><td class="r">-28.7%</td></tr></tbody></table></div></section><section class="report-sheet report-body"><div class="slide-context">分析サマリー（続き）</div>
+<h3 id="_3" class="sub-title">今回確認できたこと</h3>
+<div class="table-scroll"><table class="s-table"><thead><tr><th>確認事項</th><th>根拠</th><th>対応</th></tr></thead><tbody><tr><td>★問い合わせ完了が前年同期比+25.7%で伸長</td><td>1,232件（前年同期980件）。合算のCV（+11.2%）だけでは資料DLの落ち込みと相殺され見えていなかった</td><td>伸びている流入元（Email・Organic Search）への投資を優先</td></tr><tr><td>資料DLは前年同期比-28.7%で減少</td><td>254件（前年同期356件）。ただし優先度は問い合わせ完了の方が高いため、対応は次点</td><td>資料DLページの露出低下がないか媒体別に確認</td></tr><tr><td><code>(not set)</code> 流入が一定量ある</td><td>12,600セッション（8.3%）、★問い合わせ完了のCVRは0.19%と低い</td><td>参照元URLを確認しutmを後付けで特定</td></tr><tr><td>LinkedIn広告にutm未設定</td><td>2,500セッション全件がキャンペーン識別不能</td><td>媒体側でutmを一括付与</td></tr><tr><td>資料DLページ（/lp/whitepaper-download/）は問い合わせにほぼ寄与していない</td><td>同ページのCVは254件全てが資料DL。問い合わせ基準の順位付けでは着地ページ最下位に落ちる（詳細は8）</td><td>問い合わせ増加が目的なら、このページへの追加投資より/service/・/pricing/を優先</td></tr></tbody></table></div>
+<hr>
+</section><section class="report-sheet report-body"><h2 id="1" class="section-title">1. 月次/週次推移</h2>
+<div class="insight-box"><strong>考察:</strong> 月次では9月・1月に季節的な山があり、直近12週では緩やかな増加基調。★問い合わせ完了は年間を通じて資料DLの4〜5倍の水準で推移しており、資料DLに比べて季節変動もやや小さい。</div>
+<p>月次は季節性や長期比較、週次は直近の基本的なトレンド確認に使う（週次は直近12週のみ表示。全期間の日次データが必要な場合は <code>--granularity daily</code> を指定して別途取得する）。</p>
+<h3 id="_4" class="sub-title">月次</h3>
+<div class="report-chart"><svg viewBox="0 0 936 310" role="img" aria-label="月次CV推移（KPI別）"><text x="72" y="24" class="chart-title">月次CV推移（KPI別）</text><line x1="72" y1="50.0" x2="912" y2="50.0" class="chart-grid"/><text x="63" y="54.0" text-anchor="end" class="chart-label">14,320</text><line x1="72" y1="101.5" x2="912" y2="101.5" class="chart-grid"/><text x="63" y="105.5" text-anchor="end" class="chart-label">10,740</text><line x1="72" y1="153.0" x2="912" y2="153.0" class="chart-grid"/><text x="63" y="157.0" text-anchor="end" class="chart-label">7,160</text><line x1="72" y1="204.5" x2="912" y2="204.5" class="chart-grid"/><text x="63" y="208.5" text-anchor="end" class="chart-label">3,580</text><line x1="72" y1="256.0" x2="912" y2="256.0" class="chart-grid"/><text x="63" y="260.0" text-anchor="end" class="chart-label">0</text><circle cx="72.0" cy="211.1" r="3" fill="#171717"/><circle cx="142.0" cy="56.8" r="3" fill="#171717"/><circle cx="212.0" cy="69.9" r="3" fill="#171717"/><circle cx="282.0" cy="80.8" r="3" fill="#171717"/><circle cx="352.0" cy="97.0" r="3" fill="#171717"/><circle cx="422.0" cy="50.0" r="3" fill="#171717"/><circle cx="492.0" cy="65.2" r="3" fill="#171717"/><circle cx="562.0" cy="70.9" r="3" fill="#171717"/><circle cx="632.0" cy="77.5" r="3" fill="#171717"/><circle cx="702.0" cy="70.6" r="3" fill="#171717"/><circle cx="772.0" cy="82.7" r="3" fill="#171717"/><circle cx="842.0" cy="74.7" r="3" fill="#171717"/><circle cx="912.0" cy="128.5" r="3" fill="#171717"/><polyline points="72.0,211.1 142.0,56.8 212.0,69.9 282.0,80.8 352.0,97.0 422.0,50.0 492.0,65.2 562.0,70.9 632.0,77.5 702.0,70.6 772.0,82.7 842.0,74.7 912.0,128.5" fill="none" stroke="#171717" stroke-width="2.5"/><text x="912" y="24" text-anchor="end" fill="#171717" class="chart-legend">セッション</text><text x="72.0" y="282" text-anchor="middle" class="chart-label">2025-08※</text><text x="142.0" y="282" text-anchor="middle" class="chart-label">2025-09</text><text x="212.0" y="282" text-anchor="middle" class="chart-label">2025-10</text><text x="282.0" y="282" text-anchor="middle" class="chart-label">2025-11</text><text x="352.0" y="282" text-anchor="middle" class="chart-label">2025-12</text><text x="422.0" y="282" text-anchor="middle" class="chart-label">2026-01</text><text x="492.0" y="282" text-anchor="middle" class="chart-label">2026-02</text><text x="562.0" y="282" text-anchor="middle" class="chart-label">2026-03</text><text x="632.0" y="282" text-anchor="middle" class="chart-label">2026-04</text><text x="702.0" y="282" text-anchor="middle" class="chart-label">2026-05</text><text x="772.0" y="282" text-anchor="middle" class="chart-label">2026-06</text><text x="842.0" y="282" text-anchor="middle" class="chart-label">2026-07</text><text x="912.0" y="282" text-anchor="middle" class="chart-label">2026-08※</text></svg></div><div class="table-scroll"><table class="s-table"><thead><tr><th>月</th><th class="r">セッション</th><th class="r">ユーザー</th><th class="r">CV: ★問い合わせ完了</th><th class="r">CVR: ★問い合わせ完了</th><th class="r">CV: 資料DL</th><th class="r">CVR: 資料DL</th></tr></thead><tbody><tr><td>2025-08※</td><td class="r">3,120</td><td class="r">2,480</td><td class="r">23</td><td class="r">0.74%</td><td class="r">5</td><td class="r">0.16%</td></tr><tr><td>2025-09</td><td class="r">13,850</td><td class="r">10,760</td><td class="r">109</td><td class="r">0.79%</td><td class="r">23</td><td class="r">0.17%</td></tr><tr><td>2025-10</td><td class="r">12,940</td><td class="r">10,020</td><td class="r">100</td><td class="r">0.77%</td><td class="r">21</td><td class="r">0.16%</td></tr><tr><td>2025-11</td><td class="r">12,180</td><td class="r">9,430</td><td class="r">98</td><td class="r">0.80%</td><td class="r">20</td><td class="r">0.16%</td></tr><tr><td>2025-12</td><td class="r">11,050</td><td class="r">8,540</td><td class="r">85</td><td class="r">0.77%</td><td class="r">17</td><td class="r">0.15%</td></tr><tr><td>2026-01</td><td class="r">14,320</td><td class="r">11,080</td><td class="r">121</td><td class="r">0.84%</td><td class="r">24</td><td class="r">0.17%</td></tr><tr><td>2026-02</td><td class="r">13,260</td><td class="r">10,290</td><td class="r">110</td><td class="r">0.83%</td><td class="r">23</td><td class="r">0.17%</td></tr><tr><td>2026-03</td><td class="r">12,870</td><td class="r">9,980</td><td class="r">104</td><td class="r">0.81%</td><td class="r">22</td><td class="r">0.17%</td></tr><tr><td>2026-04</td><td class="r">12,410</td><td class="r">9,610</td><td class="r">99</td><td class="r">0.80%</td><td class="r">20</td><td class="r">0.16%</td></tr><tr><td>2026-05</td><td class="r">12,890</td><td class="r">9,970</td><td class="r">103</td><td class="r">0.80%</td><td class="r">21</td><td class="r">0.16%</td></tr><tr><td>2026-06</td><td class="r">12,050</td><td class="r">9,320</td><td class="r">91</td><td class="r">0.76%</td><td class="r">19</td><td class="r">0.16%</td></tr><tr><td>2026-07</td><td class="r">12,600</td><td class="r">9,740</td><td class="r">98</td><td class="r">0.78%</td><td class="r">20</td><td class="r">0.16%</td></tr><tr><td>2026-08※</td><td class="r">8,860</td><td class="r">6,880</td><td class="r">91</td><td class="r">1.03%</td><td class="r">19</td><td class="r">0.21%</td></tr></tbody></table></div></section><section class="report-sheet report-body"><div class="slide-context">1. 月次/週次推移（続き）</div>
+<p>※ 対象期間の端にあたるため、その月の一部のみを集計</p>
+<h3 id="12" class="sub-title">週次（直近12週）</h3>
+<div class="report-chart"><svg viewBox="0 0 960 322" role="img" aria-label="週次CV推移（KPI別）"><text x="72" y="24" class="chart-title">週次CV推移（KPI別）</text><line x1="72" y1="50.0" x2="936" y2="50.0" class="chart-grid"/><text x="63" y="54.0" text-anchor="end" class="chart-label">3,220</text><line x1="72" y1="101.5" x2="936" y2="101.5" class="chart-grid"/><text x="63" y="105.5" text-anchor="end" class="chart-label">2,415</text><line x1="72" y1="153.0" x2="936" y2="153.0" class="chart-grid"/><text x="63" y="157.0" text-anchor="end" class="chart-label">1,610</text><line x1="72" y1="204.5" x2="936" y2="204.5" class="chart-grid"/><text x="63" y="208.5" text-anchor="end" class="chart-label">805</text><line x1="72" y1="256.0" x2="936" y2="256.0" class="chart-grid"/><text x="63" y="260.0" text-anchor="end" class="chart-label">0</text><circle cx="72.0" cy="73.7" r="3" fill="#171717"/><circle cx="150.5" cy="65.4" r="3" fill="#171717"/><circle cx="229.1" cy="63.4" r="3" fill="#171717"/><circle cx="307.6" cy="56.4" r="3" fill="#171717"/><circle cx="386.2" cy="52.6" r="3" fill="#171717"/><circle cx="464.7" cy="58.3" r="3" fill="#171717"/><circle cx="543.3" cy="60.9" r="3" fill="#171717"/><circle cx="621.8" cy="50.0" r="3" fill="#171717"/><circle cx="700.4" cy="52.6" r="3" fill="#171717"/><circle cx="778.9" cy="67.9" r="3" fill="#171717"/><circle cx="857.5" cy="63.4" r="3" fill="#171717"/><circle cx="936.0" cy="143.4" r="3" fill="#171717"/><polyline points="72.0,73.7 150.5,65.4 229.1,63.4 307.6,56.4 386.2,52.6 464.7,58.3 543.3,60.9 621.8,50.0 700.4,52.6 778.9,67.9 857.5,63.4 936.0,143.4" fill="none" stroke="#171717" stroke-width="2.5"/><text x="936" y="24" text-anchor="end" fill="#171717" class="chart-legend">セッション</text><text x="72.0" y="282" text-anchor="middle" class="chart-label">2026/06/07</text><text x="72.0" y="294" text-anchor="middle" class="chart-label">〜06/13</text><text x="150.5" y="282" text-anchor="middle" class="chart-label">2026/06/14</text><text x="150.5" y="294" text-anchor="middle" class="chart-label">〜06/20</text><text x="229.1" y="282" text-anchor="middle" class="chart-label">2026/06/21</text><text x="229.1" y="294" text-anchor="middle" class="chart-label">〜06/27</text><text x="307.6" y="282" text-anchor="middle" class="chart-label">2026/06/28</text><text x="307.6" y="294" text-anchor="middle" class="chart-label">〜07/04</text><text x="386.2" y="282" text-anchor="middle" class="chart-label">2026/07/05</text><text x="386.2" y="294" text-anchor="middle" class="chart-label">〜07/11</text><text x="464.7" y="282" text-anchor="middle" class="chart-label">2026/07/12</text><text x="464.7" y="294" text-anchor="middle" class="chart-label">〜07/18</text><text x="543.3" y="282" text-anchor="middle" class="chart-label">2026/07/19</text><text x="543.3" y="294" text-anchor="middle" class="chart-label">〜07/25</text><text x="621.8" y="282" text-anchor="middle" class="chart-label">2026/07/26</text><text x="621.8" y="294" text-anchor="middle" class="chart-label">〜08/01</text><text x="700.4" y="282" text-anchor="middle" class="chart-label">2026/08/02</text><text x="700.4" y="294" text-anchor="middle" class="chart-label">〜08/08</text><text x="778.9" y="282" text-anchor="middle" class="chart-label">2026/08/09</text><text x="778.9" y="294" text-anchor="middle" class="chart-label">〜08/15</text><text x="857.5" y="282" text-anchor="middle" class="chart-label">2026/08/16</text><text x="857.5" y="294" text-anchor="middle" class="chart-label">〜08/22</text><text x="936.0" y="282" text-anchor="middle" class="chart-label">2026/08/23</text><text x="936.0" y="294" text-anchor="middle" class="chart-label">〜08/29※</text></svg></div><div class="table-scroll"><table class="s-table"><thead><tr><th>週（開始〜終了）</th><th class="r">セッション</th><th class="r">ユーザー</th><th class="r">CV: ★問い合わせ完了</th><th class="r">CVR: ★問い合わせ完了</th><th class="r">CV: 資料DL</th><th class="r">CVR: 資料DL</th></tr></thead><tbody><tr><td>2026/06/07〜06/13</td><td class="r">2,850</td><td class="r">2,210</td><td class="r">22</td><td class="r">0.77%</td><td class="r">4</td><td class="r">0.14%</td></tr><tr><td>2026/06/14〜06/20</td><td class="r">2,980</td><td class="r">2,320</td><td class="r">23</td><td class="r">0.77%</td><td class="r">5</td><td class="r">0.17%</td></tr><tr><td>2026/06/21〜06/27</td><td class="r">3,010</td><td class="r">2,340</td><td class="r">22</td><td class="r">0.73%</td><td class="r">5</td><td class="r">0.17%</td></tr><tr><td>2026/06/28〜07/04</td><td class="r">3,120</td><td class="r">2,430</td><td class="r">24</td><td class="r">0.77%</td><td class="r">5</td><td class="r">0.16%</td></tr><tr><td>2026/07/05〜07/11</td><td class="r">3,180</td><td class="r">2,470</td><td class="r">25</td><td class="r">0.79%</td><td class="r">5</td><td class="r">0.16%</td></tr><tr><td>2026/07/12〜07/18</td><td class="r">3,090</td><td class="r">2,400</td><td class="r">23</td><td class="r">0.74%</td><td class="r">5</td><td class="r">0.16%</td></tr><tr><td>2026/07/19〜07/25</td><td class="r">3,050</td><td class="r">2,370</td><td class="r">24</td><td class="r">0.79%</td><td class="r">5</td><td class="r">0.16%</td></tr><tr><td>2026/07/26〜08/01</td><td class="r">3,220</td><td class="r">2,510</td><td class="r">26</td><td class="r">0.81%</td><td class="r">5</td><td class="r">0.16%</td></tr><tr><td>2026/08/02〜08/08</td><td class="r">3,180</td><td class="r">2,470</td><td class="r">25</td><td class="r">0.79%</td><td class="r">5</td><td class="r">0.16%</td></tr><tr><td>2026/08/09〜08/15</td><td class="r">2,940</td><td class="r">2,290</td><td class="r">22</td><td class="r">0.75%</td><td class="r">5</td><td class="r">0.17%</td></tr><tr><td>2026/08/16〜08/22</td><td class="r">3,010</td><td class="r">2,340</td><td class="r">24</td><td class="r">0.80%</td><td class="r">5</td><td class="r">0.17%</td></tr><tr><td>2026/08/23〜08/29※</td><td class="r">1,760</td><td class="r">1,370</td><td class="r">14</td><td class="r">0.80%</td><td class="r">3</td><td class="r">0.17%</td></tr></tbody></table></div>
+<p>※ 対象期間の末日（2026-08-24）までのみの集計で、週の途中まで</p>
+<hr>
+</section><section class="report-sheet report-body"><h2 id="2" class="section-title">2. チャネル別パフォーマンス（前年同期比つき）</h2>
+<div class="insight-box"><strong>考察:</strong> Organic Searchが流入の43.0%を占め、前年同期比+3.1%と堅調。★問い合わせ完了で見るとEmail（CVR 1.59%）とPaid Search（1.34%）が効率よく貢献している一方、Paid SocialはCVRこそ低い（0.11%）ものの資料DL（0.45%）には効いており、KPI別に見ないと「Paid Socialは効率が悪い」と誤読するところだった。</div>
+<div class="report-chart"><svg viewBox="0 0 760 322" role="img" aria-label="チャネル別セッション"><text x="72" y="24" class="chart-title">チャネル別セッション</text><line x1="72" y1="50.0" x2="736" y2="50.0" class="chart-grid"/><text x="63" y="54.0" text-anchor="end" class="chart-label">65,530</text><line x1="72" y1="101.5" x2="736" y2="101.5" class="chart-grid"/><text x="63" y="105.5" text-anchor="end" class="chart-label">49,148</text><line x1="72" y1="153.0" x2="736" y2="153.0" class="chart-grid"/><text x="63" y="157.0" text-anchor="end" class="chart-label">32,765</text><line x1="72" y1="204.5" x2="736" y2="204.5" class="chart-grid"/><text x="63" y="208.5" text-anchor="end" class="chart-label">16,382</text><line x1="72" y1="256.0" x2="736" y2="256.0" class="chart-grid"/><text x="63" y="260.0" text-anchor="end" class="chart-label">0</text><rect x="98.4" y="50.0" width="42.0" height="206.0" class="chart-bar"/><text x="119.4" y="282" text-anchor="middle" class="chart-label">Organic</text><text x="119.4" y="294" text-anchor="middle" class="chart-label">Search</text><rect x="193.3" y="169.8" width="42.0" height="86.2" class="chart-bar"/><text x="214.3" y="282" text-anchor="middle" class="chart-label">Paid</text><text x="214.3" y="294" text-anchor="middle" class="chart-label">Search</text><rect x="288.1" y="198.5" width="42.0" height="57.5" class="chart-bar"/><text x="309.1" y="282" text-anchor="middle" class="chart-label">Email</text><rect x="383.0" y="209.5" width="42.0" height="46.5" class="chart-bar"/><text x="404.0" y="282" text-anchor="middle" class="chart-label">Direct</text><rect x="477.9" y="216.4" width="42.0" height="39.6" class="chart-bar"/><text x="498.9" y="282" text-anchor="middle" class="chart-label">(not</text><text x="498.9" y="294" text-anchor="middle" class="chart-label">set)</text><rect x="572.7" y="217.7" width="42.0" height="38.3" class="chart-bar"/><text x="593.7" y="282" text-anchor="middle" class="chart-label">Paid</text><text x="593.7" y="294" text-anchor="middle" class="chart-label">Social</text><rect x="667.6" y="251.0" width="42.0" height="5.0" class="chart-bar"/><text x="688.6" y="282" text-anchor="middle" class="chart-label">Referral</text><text x="736" y="24" text-anchor="end" class="chart-legend">セッション</text></svg></div><div class="table-scroll"><table class="s-table"><thead><tr><th>チャネル</th><th class="r">セッション</th><th class="r">シェア</th><th class="r">前年同期比</th><th class="r">CV: ★問い合わせ完了</th><th class="r">CVR: ★問い合わせ完了</th><th class="r">CV: 資料DL</th><th class="r">CVR: 資料DL</th></tr></thead><tbody><tr><td>Organic Search</td><td class="r">65,530</td><td class="r">43.0%</td><td class="r">+3.1%</td><td class="r">490</td><td class="r">0.75%</td><td class="r">90</td><td class="r">0.14%</td></tr><tr><td>Paid Search</td><td class="r">27,430</td><td class="r">18.0%</td><td class="r">+12.4%</td><td class="r">368</td><td class="r">1.34%</td><td class="r">60</td><td class="r">0.22%</td></tr><tr><td>Email</td><td class="r">18,290</td><td class="r">12.0%</td><td class="r">+0.4%</td><td class="r">290</td><td class="r">1.59%</td><td class="r">20</td><td class="r">0.11%</td></tr><tr><td>Direct</td><td class="r">14,780</td><td class="r">9.7%</td><td class="r">-2.1%</td><td class="r">47</td><td class="r">0.32%</td><td class="r">15</td><td class="r">0.10%</td></tr><tr><td>(not set)</td><td class="r">12,600</td><td class="r">8.3%</td><td class="r">+18.9%</td><td class="r">24</td><td class="r">0.19%</td><td class="r">8</td><td class="r">0.06%</td></tr><tr><td>Paid Social</td><td class="r">12,190</td><td class="r">8.0%</td><td class="r">+9.7%</td><td class="r">13</td><td class="r">0.11%</td><td class="r">55</td><td class="r">0.45%</td></tr><tr><td>Referral</td><td class="r">1,580</td><td class="r">1.0%</td><td class="r">-5.4%</td><td class="r">0</td><td class="r">0.00%</td><td class="r">6</td><td class="r">0.38%</td></tr></tbody></table></div>
+<hr>
+</section><section class="report-sheet report-body"><h2 id="3-10" class="section-title">3. ランディングページ別（セッション上位10件）</h2>
+<div class="insight-box"><strong>考察:</strong> トップページと季節キャンペーンLPが上位を占める一方、資料DLページ（/lp/whitepaper-download/）は資料DLの254件を1ページでほぼ独占しており、★問い合わせ完了には0件しか貢献していない。問い合わせを増やす目的では、このページより/service/・/pricing/の方が実質的な入口になっている。</div>
+<div class="table-scroll"><table class="s-table"><thead><tr><th>ランディングページ</th><th class="r">セッション</th><th class="r">CV: ★問い合わせ完了</th><th class="r">CVR: ★問い合わせ完了</th><th class="r">CV: 資料DL</th><th class="r">CVR: 資料DL</th></tr></thead><tbody><tr><td>/</td><td class="r">33,100</td><td class="r">0</td><td class="r">0.00%</td><td class="r">0</td><td class="r">0.00%</td></tr><tr><td>/media/knowledge/spring-seminar/</td><td class="r">19,720</td><td class="r">53</td><td class="r">0.27%</td><td class="r">0</td><td class="r">0.00%</td></tr><tr><td>/service/</td><td class="r">14,220</td><td class="r">128</td><td class="r">0.90%</td><td class="r">0</td><td class="r">0.00%</td></tr><tr><td>/company/</td><td class="r">10,390</td><td class="r">11</td><td class="r">0.11%</td><td class="r">0</td><td class="r">0.00%</td></tr><tr><td>/lp/whitepaper-download/</td><td class="r">7,640</td><td class="r">0</td><td class="r">0.00%</td><td class="r">254</td><td class="r">3.33%</td></tr><tr><td>/media/</td><td class="r">6,470</td><td class="r">3</td><td class="r">0.05%</td><td class="r">0</td><td class="r">0.00%</td></tr><tr><td>/pricing/</td><td class="r">5,730</td><td class="r">85</td><td class="r">1.48%</td><td class="r">0</td><td class="r">0.00%</td></tr><tr><td>/contact/</td><td class="r">4,350</td><td class="r">32</td><td class="r">0.74%</td><td class="r">0</td><td class="r">0.00%</td></tr><tr><td>/case/</td><td class="r">4,030</td><td class="r">21</td><td class="r">0.52%</td><td class="r">0</td><td class="r">0.00%</td></tr><tr><td>/recruit/</td><td class="r">3,080</td><td class="r">2</td><td class="r">0.06%</td><td class="r">0</td><td class="r">0.00%</td></tr></tbody></table></div>
+<hr>
+</section><section class="report-sheet report-body"><h2 id="4-pv10" class="section-title">4. ページ別（PV上位10件。回遊も含めた人気ページ）</h2>
+<div class="insight-box"><strong>考察:</strong> <code>/pricing/</code>（料金ページ）は入口としてより閲覧として見られており、<code>/service/</code> 等からの回遊先として機能している。</div>
+<p>ランディングページ別（3）は「入口」としての人気、こちらは「閲覧された回数」の人気。両者の順位が異なるページは、回遊先としては強いが入口としては弱い（またはその逆）ことを示す。</p>
+<p>※ 離脱率は GA4 標準APIに相当する指標が無いため掲載していない（セッション内の最終ページを表す指標が提供されていない。正確な値が必要な場合はBigQueryのGA4エクスポート生データが必要）。</p>
+<div class="table-scroll"><table class="s-table"><thead><tr><th>ページ</th><th class="r">PV</th><th class="r">閲覧開始（エントランス相当）</th><th class="r">閲覧開始率</th></tr></thead><tbody><tr><td>/</td><td class="r">51,400</td><td class="r">33,100</td><td class="r">64.4%</td></tr><tr><td>/service/</td><td class="r">25,570</td><td class="r">14,220</td><td class="r">55.6%</td></tr><tr><td>/pricing/</td><td class="r">21,010</td><td class="r">5,730</td><td class="r">27.3%</td></tr><tr><td>/media/knowledge/spring-seminar/</td><td class="r">19,830</td><td class="r">19,720</td><td class="r">99.4%</td></tr><tr><td>/case/</td><td class="r">11,140</td><td class="r">4,030</td><td class="r">36.2%</td></tr><tr><td>/company/</td><td class="r">10,500</td><td class="r">10,390</td><td class="r">98.9%</td></tr><tr><td>/contact/</td><td class="r">7,650</td><td class="r">4,350</td><td class="r">56.9%</td></tr><tr><td>/lp/whitepaper-download/</td><td class="r">7,640</td><td class="r">7,640</td><td class="r">100.0%</td></tr><tr><td>/media/</td><td class="r">6,470</td><td class="r">6,470</td><td class="r">100.0%</td></tr><tr><td>/recruit/</td><td class="r">3,190</td><td class="r">3,080</td><td class="r">96.6%</td></tr></tbody></table></div>
+<hr>
+</section><section class="report-sheet report-body"><h2 id="5-mobile-desktop-tablet" class="section-title">5. デバイス別（mobile / desktop / tablet）</h2>
+<div class="insight-box"><strong>考察:</strong> desktopがセッションの63.6%を占め、★問い合わせ完了もdesktop比率が高い（CVR 0.98%）。mobileは問い合わせ完了のCVRがdesktopの半分程度（0.53%）にとどまり、フォーム・導線のモバイル最適化に改善余地がある。資料DLはdevice間のCVR差が問い合わせ完了ほど大きくない。</div>
+<p>シェアの分母は全体セッション（切り口なしの値）。mobile/desktop/tabletの3カテゴリに分類できないセッションがある場合は「(不明・分類外)」の行で差分を明示する。</p>
+<div class="table-scroll"><table class="s-table"><thead><tr><th>デバイス</th><th class="r">セッション</th><th class="r">シェア</th><th class="r">CV: ★問い合わせ完了</th><th class="r">CVR: ★問い合わせ完了</th><th class="r">CV: 資料DL</th><th class="r">CVR: 資料DL</th></tr></thead><tbody><tr><td>desktop</td><td class="r">96,930</td><td class="r">63.6%</td><td class="r">950</td><td class="r">0.98%</td><td class="r">215</td><td class="r">0.22%</td></tr><tr><td>mobile</td><td class="r">52,760</td><td class="r">34.6%</td><td class="r">278</td><td class="r">0.53%</td><td class="r">38</td><td class="r">0.07%</td></tr><tr><td>tablet</td><td class="r">1,690</td><td class="r">1.1%</td><td class="r">4</td><td class="r">0.24%</td><td class="r">1</td><td class="r">0.06%</td></tr><tr><td>(不明・分類外)</td><td class="r">1,020</td><td class="r">0.7%</td><td class="r">-</td><td class="r">-</td><td class="r">-</td><td class="r">-</td></tr></tbody></table></div>
+<p>※ 「(不明・分類外)」は、GA4がmobile/desktop/tabletのいずれにも分類できなかったセッション（スマートTV等）。内訳の合計だけを分母にすると、この分だけ各行のシェアが実態より高く出てしまうため、全体セッションを分母に固定している。</p>
+<hr>
+</section><section class="report-sheet report-body"><h2 id="6" class="section-title">6. 新規/リピーター別</h2>
+<div class="insight-box"><strong>考察:</strong> リピーターの★問い合わせ完了CVRは新規の約1.8倍（1.15% vs 0.65%）。既存接点（メルマガ・リターゲティング）の強化が問い合わせ増加に直結しやすい。資料DLは新規・リピーターでCVRの差が小さく、認知目的のコンテンツとして機能している。</div>
+<p>シェアの分母は全体セッション（切り口なしの値）。new/returningに分類できないセッションがある場合は「(不明・分類外)」の行で差分を明示する。</p>
+<div class="table-scroll"><table class="s-table"><thead><tr><th>ユーザー種別</th><th class="r">セッション</th><th class="r">シェア</th><th class="r">CV: ★問い合わせ完了</th><th class="r">CVR: ★問い合わせ完了</th><th class="r">CV: 資料DL</th><th class="r">CVR: 資料DL</th></tr></thead><tbody><tr><td>new</td><td class="r">103,630</td><td class="r">68.0%</td><td class="r">675</td><td class="r">0.65%</td><td class="r">164</td><td class="r">0.16%</td></tr><tr><td>returning</td><td class="r">48,390</td><td class="r">31.8%</td><td class="r">557</td><td class="r">1.15%</td><td class="r">90</td><td class="r">0.19%</td></tr><tr><td>(不明・分類外)</td><td class="r">380</td><td class="r">0.2%</td><td class="r">-</td><td class="r">-</td><td class="r">-</td><td class="r">-</td></tr></tbody></table></div>
+<hr>
+</section><section class="report-sheet report-body"><h2 id="7-cv" class="section-title">7. CVファネル</h2>
+<div class="insight-box"><strong>考察:</strong> キーイベント1件ごとに1本のファネルを作り、分子（CV達成）はそのキーイベントだけを数える。優先して見ていく★問い合わせ完了は中間ページへの到達率が2.9%と低い一方、到達後の転換率は28.3%と高く、ボトルネックは「呼び込み」側にある。資料DLは到達率5.0%・到達後の転換率3.3%で、どちらも問い合わせ完了ほど極端ではない。</div>
+<p>キーイベント1件につき1本のファネルを作る（分子はそのキーイベントの達成のみを数え、他のキーイベントの発火は含めない）。「到達率」は1つ前のステップに対する割合、「全体に対する到達率」は流入全体に対する割合。呼び込めていないのか、呼び込んでも転換しないのかを切り分けるため、中間ページへの到達率と、到達後の転換率を分けて見る。</p>
+<h3 id="form_submit" class="sub-title">★問い合わせ完了（form_submit）</h3>
+<p>中間ページ: <code>/contact/</code>（部分一致（CONTAINS）で判定）</p>
+<div class="table-scroll"><table class="s-table"><thead><tr><th>ステップ</th><th class="r">セッション</th><th class="r">到達率（対前ステップ）</th><th class="r">全体に対する到達率</th></tr></thead><tbody><tr><td>全体（セッション）</td><td class="r">152,400</td><td class="r">-</td><td class="r">100.0%</td></tr><tr><td>中間ページ到達: /contact/</td><td class="r">4,350</td><td class="r">2.9%</td><td class="r">2.9%</td></tr><tr><td>CV達成</td><td class="r">1,232</td><td class="r">28.3%</td><td class="r">0.8%</td></tr></tbody></table></div></section><section class="report-sheet report-body"><div class="slide-context">7. CVファネル（続き）</div>
+<h3 id="dlfile_download" class="sub-title">資料DL（file_download）</h3>
+<p>中間ページ: <code>/lp/whitepaper-download/</code>（部分一致（CONTAINS）で判定）</p>
+<div class="table-scroll"><table class="s-table"><thead><tr><th>ステップ</th><th class="r">セッション</th><th class="r">到達率（対前ステップ）</th><th class="r">全体に対する到達率</th></tr></thead><tbody><tr><td>全体（セッション）</td><td class="r">152,400</td><td class="r">-</td><td class="r">100.0%</td></tr><tr><td>中間ページ到達: /lp/whitepaper-download/</td><td class="r">7,640</td><td class="r">5.0%</td><td class="r">5.0%</td></tr><tr><td>CV達成</td><td class="r">254</td><td class="r">3.3%</td><td class="r">0.2%</td></tr></tbody></table></div>
+<p>キーイベントが2件のみのため、5本の上限による対象外は無し。</p>
+<hr>
+</section><section class="report-sheet report-body"><h2 id="8-cv" class="section-title">8. CVはどこから来たか</h2>
+<div class="insight-box"><strong>考察:</strong> ★問い合わせ完了を基準に見ると、セッション最多の「/」やCV最多だった資料DLページ（/lp/whitepaper-download/）は下位に沈み、代わりに/service/・/pricing/が上位に来る。資料DLの合算CVだけでランディングページの優先度を判断すると、問い合わせを増やす施策の的が外れる典型例。</div>
+<p>セッション数の順位（量）とCV数の順位（質）を並べる。順位差が大きいほど、量と質にズレがある（セッションは多いのにCVが伸びていない／逆に少数でも効率よくCVしている）。</p>
+<p>「CV（順位）」は主に見ていく★問い合わせ完了の件数で順位付けしている（資料DLの件数は右側に内訳として添える。優先度が未設定の場合はCV合算で順位付けする）。</p>
+<h3 id="cv10" class="sub-title">ランディングページ別（CV上位10件、セッション順位との比較）</h3>
+<div class="table-scroll"><table class="s-table"><thead><tr><th>ランディングページ</th><th class="r">セッション（順位）</th><th class="r">★問い合わせ完了（順位）</th><th class="r">順位差</th><th class="r">資料DL</th></tr></thead><tbody><tr><td>/service/</td><td class="r">14,220（3位）</td><td class="r">128（1位）</td><td class="r">+2</td><td class="r">0</td></tr><tr><td>/pricing/</td><td class="r">5,730（7位）</td><td class="r">85（2位）</td><td class="r">+5</td><td class="r">0</td></tr><tr><td>/media/knowledge/spring-seminar/</td><td class="r">19,720（2位）</td><td class="r">53（3位）</td><td class="r">-1</td><td class="r">0</td></tr><tr><td>/contact/</td><td class="r">4,350（8位）</td><td class="r">32（4位）</td><td class="r">+4</td><td class="r">0</td></tr><tr><td>/case/</td><td class="r">4,030（9位）</td><td class="r">21（5位）</td><td class="r">+4</td><td class="r">0</td></tr><tr><td>/company/</td><td class="r">10,390（4位）</td><td class="r">11（6位）</td><td class="r">-2</td><td class="r">0</td></tr><tr><td>/media/</td><td class="r">6,470（6位）</td><td class="r">3（7位）</td><td class="r">-1</td><td class="r">0</td></tr><tr><td>/recruit/</td><td class="r">3,080（10位）</td><td class="r">2（8位）</td><td class="r">+2</td><td class="r">0</td></tr><tr><td>/lp/whitepaper-download/</td><td class="r">7,640（5位）</td><td class="r">0（9位）</td><td class="r">-4</td><td class="r">254</td></tr><tr><td>/</td><td class="r">33,100（1位）</td><td class="r">0（10位）</td><td class="r">-9</td><td class="r">0</td></tr></tbody></table></div></section><section class="report-sheet report-body"><div class="slide-context">8. CVはどこから来たか（続き）</div>
+<h3 id="utm_source-utm_mediumcv10" class="sub-title">流入元別（utm_source / utm_medium、CV上位10件、セッション順位との比較）</h3>
+<div class="table-scroll"><table class="s-table"><thead><tr><th>流入元</th><th class="r">セッション（順位）</th><th class="r">★問い合わせ完了（順位）</th><th class="r">順位差</th><th class="r">資料DL</th></tr></thead><tbody><tr><td>google / organic</td><td class="r">65,530（1位）</td><td class="r">490（1位）</td><td class="r">+0</td><td class="r">90</td></tr><tr><td>mailmag / email</td><td class="r">18,290（3位）</td><td class="r">290（2位）</td><td class="r">+1</td><td class="r">20</td></tr><tr><td>google / cpc</td><td class="r">19,020（2位）</td><td class="r">260（3位）</td><td class="r">-1</td><td class="r">62</td></tr><tr><td>yahoo / cpc</td><td class="r">13,540（4位）</td><td class="r">70（4位）</td><td class="r">+0</td><td class="r">26</td></tr><tr><td>facebook / paid_social</td><td class="r">8,990（5位）</td><td class="r">10（5位）</td><td class="r">+0</td><td class="r">42</td></tr><tr><td>linkedin / social</td><td class="r">2,500（6位）</td><td class="r">0（6位）</td><td class="r">+0</td><td class="r">0</td></tr></tbody></table></div>
+<hr>
+<p>CVがどのページを経て起きたかは、BigQuery連携を設定すると分かる（今回はBigQuery連携が未設定のため確認していない）。</p>
+<hr>
+<p>GA4 Data APIで取得した集計データを使用。個人単位のデータは使用していません。</p></section>
+    <div class="report-footer">CONFIDENTIAL</div>
+  </div>
+  </div>
+</div>
+<script>
+(() => {
+  const links = [...document.querySelectorAll('.report-nav a[data-section]')];
+  if (!links.length) return;
+  const byId = new Map(links.map(a => [a.dataset.section, a]));
+  let manualSelectionUntil = 0;
+  const selectLink = current => {
+    links.forEach(a => a.classList.remove('is-current'));
+    if (current) current.classList.add('is-current');
+  };
+  links.forEach(a => a.addEventListener('click', () => {
+    // smooth scrollの途中でIntersectionObserverが直前の章へ戻すことを防ぐ。
+    manualSelectionUntil = Date.now() + 800;
+    selectLink(a);
+  }));
+  const observer = new IntersectionObserver(entries => {
+    if (Date.now() < manualSelectionUntil) return;
+    const visible = entries.filter(e => e.isIntersecting).sort((a,b) => a.boundingClientRect.top-b.boundingClientRect.top)[0];
+    if (!visible) return;
+    const current = byId.get(visible.target.id);
+    selectLink(current);
+  }, {rootMargin:'-10% 0px -75% 0px'});
+  document.querySelectorAll('.report-body h2[id],.report-body h3[id]').forEach(h => observer.observe(h));
+})();
+</script>
+</body>
+</html>

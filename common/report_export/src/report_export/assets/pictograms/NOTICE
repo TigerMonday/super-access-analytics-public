@@ -1,0 +1,10 @@
+Report pictograms are derived from Material Symbols Rounded by Google.
+Source: https://fonts.google.com/icons
+License: Apache License 2.0 (see LICENSE in this directory)
+
+Local changes:
+- selected six pictograms used in analytical reports;
+- normalized the SVG viewBox and wrapped paths for positive coordinates;
+- set a charcoal default fill and Japanese source titles;
+- report_export replaces the fill with currentColor and treats the graphic as
+  decorative because the adjacent visible text provides the accessible label.

@@ -1,0 +1,197 @@
+created_date: "2026-08-30"
+source_report: outputs/sample-client/03_research/20260830_サンプル案件_external_research/00_3c_persona_journey_report.md
+source_child_reports:
+  - outputs/sample-client/03_research/20260830_サンプル案件_external_research/01_desk_research.md
+  - outputs/sample-client/03_research/20260830_サンプル案件_external_research/02_review_research.md
+  - outputs/sample-client/03_research/20260830_サンプル案件_external_research/03_qa_research.md
+
+three_c:
+  customer:
+    summary: 現場の経理担当者は導入決裁権を持たず、上長を説得する材料を探している。
+    evidence: "03_qa_research.md「知恵袋: 会計SaaS 上司 説得」に類する投稿が複数"
+  competitor:
+    summary: 主要3社は価格訴求が中心で、導入後の運用支援を訴求する競合が少ない。
+    evidence: 01_desk_research.md 比較マトリクス
+  company:
+    summary: 中小企業向け会計SaaS。toB、リード獲得が主目的。
+    evidence: 01登録情報（profile.yaml） + 公式サイト
+
+# persona_001: 「顧客の声で裏付け」の例（レビュー・Q&Aで実在の発言が確認できたペルソナ）。
+#               研究段階の2つ目の障壁（persona_001_research_b2）は evidence_type: desk_research の例
+#               （第三者レビューサイト・Q&Aサイトを調べたが見つからなかった、という客観的事実が根拠。
+#               顧客の発言でも自社の想定でもない点で customer_voice / service_derived と区別する）
+# persona_002: 「サービスから逆算」の例（01_desk_research.md の自社サービスメニュー×想定顧客マップが主材料。
+#               顧客の声による裏付けはまだ無い＝unresolved参照）
+personas:
+  - persona_id: persona_001
+    name: 現場の経理担当者
+    persona_basis: customer_voice_confirmed   # レビュー・Q&Aの実在の発言で確認できた
+    distinguishing_factor: |
+      決裁権を持たず「調査」「検討」段階で上長説得の材料探しが挟まる点が、
+      決裁者（persona_002）と態度変容フローの分岐点になる。
+    relevant_attributes:
+      - attribute: 決裁権
+        detail: 無し。稟議には上長の承認が必要
+        evidence_type: customer_voice
+        evidence: 03_qa_research.md の投稿引用
+    journey:
+      - stage_id: daily_business
+        stage_name: 日常業務
+        situation: 手作業の経理処理に追われている。
+        awareness_state: 業務が非効率だとは感じているが、ツール導入の発想は無い。
+        barriers:
+          - barrier_id: persona_001_daily_business_b1
+            description: 忙しく、課題を言語化する余裕が無い。
+            evidence_type: customer_voice
+            evidence: 02_review_research.md のレビュー引用
+        stimuli:
+          - stimulus_id: persona_001_daily_business_s1
+            description: 同業他社の効率化事例に触れる。
+            evidence_type: hypothesis
+            evidence: null
+      - stage_id: problem_emergence
+        stage_name: 課題の発生
+        situation: 月次締め作業でミスが発生し、上長から指摘を受ける。
+        awareness_state: 「このままではまずい」と課題を認識するが、解決策は未検討。
+        barriers:
+          - barrier_id: persona_001_problem_emergence_b1
+            description: 何を検索すればよいか分からない。
+            evidence_type: hypothesis
+            evidence: null
+        stimuli:
+          - stimulus_id: persona_001_problem_emergence_s1
+            description: 「経理 ミス 防止」等の検索広告での接触。
+            evidence_type: hypothesis
+            evidence: null
+      - stage_id: research
+        stage_name: 調査
+        situation: 検索・比較サイト・知恵袋で情報収集する。
+        awareness_state: 複数ツールの存在を認識しているが、違いが分からない。
+        barriers:
+          - barrier_id: persona_001_research_b1
+            description: 上長を説得できる比較材料が見つからない。
+            evidence_type: customer_voice
+            evidence: 03_qa_research.md の投稿引用
+          - barrier_id: persona_001_research_b2
+            description: 第三者の評価（レビュー・Q&A）を探しても見つからず、比較材料にできない。
+            evidence_type: desk_research   # 顧客の発言でも自社の想定でもなく、調べて確認した客観的事実（不在の確認）
+            evidence: 02_review_research.md「ITreviewのレビュー0件、Q&Aサイトでの言及0件」
+        stimuli:
+          - stimulus_id: persona_001_research_s1
+            description: 「上司を説得できた」という体験談・比較表コンテンツへの接触。
+            evidence_type: customer_voice
+            evidence: 03_qa_research.md「比較表を見せたら通った」という回答
+      - stage_id: consideration
+        stage_name: 検討
+        situation: 候補を2〜3社に絞り、資料請求・問い合わせをする。
+        awareness_state: 機能差は理解したが、導入後のサポート体制が不安。
+        barriers:
+          - barrier_id: persona_001_consideration_b1
+            description: 導入後の運用イメージが持てない。
+            evidence_type: customer_voice
+            evidence: 02_review_research.md のレビュー引用
+        stimuli:
+          - stimulus_id: persona_001_consideration_s1
+            description: 導入事例・サポート体制の具体的な説明。
+            evidence_type: service_derived
+            evidence: 01_desk_research.md 自社サービスページ「導入後30日間の伴走サポート」記載
+      - stage_id: purchase
+        stage_name: 問い合わせ   # 01のkpis.yaml kpi_002（お問い合わせ完了数 / events: generate_lead, form_submit）から導出。stage_idは固定のまま
+        situation: 上長の承認を得て問い合わせ・契約する。
+        awareness_state: 稟議のための資料が揃えば決裁が通ると認識している。
+        barriers:
+          - barrier_id: persona_001_purchase_b1
+            description: 稟議書に転記できる形の資料が無い。
+            evidence_type: hypothesis
+            evidence: null
+        stimuli:
+          - stimulus_id: persona_001_purchase_s1
+            description: 稟議用テンプレート・見積書の即時提供。
+            evidence_type: hypothesis
+            evidence: null
+
+  - persona_id: persona_002
+    name: 経営者（決裁者）
+    persona_basis: service_derived   # 01_desk_research.md の自社サービスメニュー×想定顧客マップが主材料。顧客の声による裏付けは未確認（unresolved参照）
+    distinguishing_factor: |
+      決裁権を自ら持ち、上長説得の工程が無い。「調査」段階から費用対効果を
+      直接比較する点がpersona_001と分かれる。
+    relevant_attributes:
+      - attribute: 決裁権
+        detail: 有り。自分の判断で契約できる
+        evidence_type: service_derived
+        evidence: "01_desk_research.md 自社サービスメニュー×想定顧客マップ：エンタープライズプランの想定顧客記載（経営者が自ら意思決定する中小企業）"
+    journey:
+      - stage_id: daily_business
+        stage_name: 日常業務
+        situation: 経理は現場に任せており、日常的な関与は薄い。
+        awareness_state: コスト管理に関心はあるが、経理業務の詳細は見ていない。
+        barriers:
+          - barrier_id: persona_002_daily_business_b1
+            description: 現場の非効率さが経営者の目に触れない。
+            evidence_type: hypothesis
+            evidence: null
+        stimuli:
+          - stimulus_id: persona_002_daily_business_s1
+            description: 月次コストレポートで異常値を可視化する。
+            evidence_type: hypothesis
+            evidence: null
+      - stage_id: problem_emergence
+        stage_name: 課題の発生
+        situation: 決算・監査で経理体制の弱さを指摘される。
+        awareness_state: 経理体制の見直しが必要だと認識する。
+        barriers:
+          - barrier_id: persona_002_problem_emergence_b1
+            description: 何から手を付けるべきか分からない。
+            evidence_type: hypothesis
+            evidence: null
+        stimuli:
+          - stimulus_id: persona_002_problem_emergence_s1
+            description: 同規模企業の経理体制見直し事例。
+            evidence_type: hypothesis
+            evidence: null
+      - stage_id: research
+        stage_name: 調査
+        situation: 費用対効果（ROI）を軸にツールを比較する。
+        awareness_state: 価格差は把握しているが、削減できる工数の規模感が不明。
+        barriers:
+          - barrier_id: persona_003_research_b1
+            description: 工数削減効果を数値で示す情報が少ない。
+            evidence_type: hypothesis
+            evidence: null
+        stimuli:
+          - stimulus_id: persona_003_research_s1
+            description: 工数削減の試算ツール・事例数値の提示。
+            evidence_type: service_derived
+            evidence: "01_desk_research.md 自社サービスページ「工数削減シミュレーター」記載"
+      - stage_id: consideration
+        stage_name: 検討
+        situation: 候補を絞り、価格と導入期間を比較する。
+        awareness_state: 機能差より導入のしやすさを重視している。
+        barriers:
+          - barrier_id: persona_002_consideration_b1
+            description: 導入にかかる期間・移行負荷が読めない。
+            evidence_type: hypothesis
+            evidence: null
+        stimuli:
+          - stimulus_id: persona_002_consideration_s1
+            description: 導入期間の具体的な提示・移行サポートの説明。
+            evidence_type: service_derived
+            evidence: "01_desk_research.md 自社サービスページ「最短2週間導入」記載"
+      - stage_id: purchase
+        stage_name: 問い合わせ   # persona_001と同じ最終段階名（01のkpis.yaml kpi_002から導出）。stage_idは固定のまま
+        situation: 自らの判断で問い合わせ・契約する。
+        awareness_state: 価格と導入期間に納得すれば契約に進める。
+        barriers:
+          - barrier_id: persona_002_purchase_b1
+            description: 契約条件（解約条件等）の確認に時間がかかる。
+            evidence_type: hypothesis
+            evidence: null
+        stimuli:
+          - stimulus_id: persona_002_purchase_s1
+            description: 契約条件の明確な提示・即日見積り。
+            evidence_type: hypothesis
+            evidence: null
+
+unresolved:
+  - persona_002（決裁者）は顧客の声（レビュー・Q&A・SNS）による裏付けが取れておらず、01_desk_research.md（サービスから逆算）のみが根拠。customer_voice_confirmedへの格上げは追加調査が必要

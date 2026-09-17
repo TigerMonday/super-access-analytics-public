@@ -1,0 +1,28 @@
+client:
+  client_id: sample-client
+  name: 株式会社サンプル  # leak-ok: ダミー会社名の統一表記（実在の社名ではない）
+  industry: SaaS
+  business: 中小企業向け会計SaaSの開発・提供
+  site_url: https://example.com
+  business_model: toB
+  target: 中小企業の経理担当・経営者
+  notes: |
+    2024年リブランディング。コーポレートサイトはリード獲得が主目的。
+    製品サイトとブログのサブドメインも計測対象。
+aliases:
+  - sample-inc            # 旧clientフォルダ名
+  - サンプル株式会社        # 社内での呼称（日本語表記ゆれ）  leak-ok: ダミー会社名の統一表記（実在の社名ではない）
+preferences:
+  output_formats: []      # MDのみ（変換しない）と回答済み。変換したい形式があれば ["html"] のように書く
+  # 各形式の向き不向き:
+  #   - html / pdf: レポート・提案書のように読み物として見せたいとき（デザインシステム準拠の見た目）
+  #   - xlsx: 数字を表として並べ替えたい・関数を入れたいとき
+  #   - docx: Wordで文言を手直ししたいとき（html/pdf/xlsxと同じくreport_exportが変換するだけで認証不要。
+  #     生成後にドライブ等へ手で入れる運用）
+  #   - gdoc: 読み物をGoogleドキュメントとして関係者と一緒に更新・コメントしたいとき
+  #   - gsheet: 数字の表をGoogleスプレッドシートとして関係者と一緒に更新したいとき
+  # gdoc / gsheet を選ぶ場合はURLも必須（下の例はコメントアウト。サービスアカウントは自分で
+  # ファイルを作れないため、利用者が先に空のファイルを作りサービスアカウントに編集者で共有し、
+  # その先のURLをここに書く）
+  # output_formats: ["gsheet"]
+  # google_sheet_url: "https://docs.google.com/spreadsheets/d/xxxxxxxx/edit"

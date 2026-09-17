@@ -1,0 +1,16 @@
+# 計測環境レジストリテンプレート → context/<client_id>/measurement.yaml にコピーして記入
+# 未契約・未設定のブロックは丸ごと省略可
+ga4:
+  property_id: ""          # 例: "123456789"
+  auth_method: sa          # sa（サービスアカウント）/ oauth
+gtm:
+  gtm_account_id: ""
+  gtm_container_id: ""     # 数値のcontainerId。公開ID（例: "GTM-XXXXXXX"）も実行時に自動解決
+search_console:
+  site_url: ""             # 例: "https://example.com/" または "sc-domain:example.com"
+bigquery:
+  project_id: ""
+  dataset: ""              # GA4 BQ エクスポート先 例: "analytics_123456789"
+ad_accounts:
+  - platform: ""           # google_ads / yahoo_ads / meta_ads など
+    account_id: ""

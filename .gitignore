@@ -1,0 +1,59 @@
+__pycache__/
+.pytest_cache/
+desktop.ini
+.DS_Store
+# 全階層の outputs/ を除外（意図的な仕様）。分析の成果物には実データが載るため、
+# リポジトリには含めない。ソースコードのディレクトリ名に outputs を使わないこと
+# （誤って除外対象にしないため）。
+outputs/
+samples/_*.md
+**/samples/_*.md
+*.pyc
+.venv/
+node_modules/
+**/scripts/screenshots/
+/tmp/
+
+# クライアントから受け取ったフィードバック・参考資料（機密情報を含む）
+/FB/
+
+# 環境変数・秘密鍵・OAuth認証情報。各機能の個別設定に漏れがあっても
+# リポジトリ全体でコミット対象から外す。
+.env
+.env.*
+!.env.example
+!**/.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+id_rsa
+id_ed25519
+credentials.json
+credentials*.json
+service-account*.json
+service_account*.json
+client_secret*.json
+oauth-*.json
+application_default_credentials.json
+*.local.yml
+*.local.yaml
+
+# 公開用サンプルとテストfixtureのダミー設定は追跡する。
+!**/sample-client/inputs/*.local.yml
+!**/sample-client/inputs/*.local.yaml
+!**/tests/fixtures/*.local.yml
+!**/tests/fixtures/*.local.yaml
+
+# コンテキスト管理: クライアント実データ（スキーマ・テンプレ・サンプルは追跡）
+01_context_management/context/
+
+# 認証情報。既定の置き場所はリポジトリの外（~/.saa/credentials/）だが、
+# 誤ってこの中に置かれた場合の安全網として除外する。
+*.json.key
+sa-key*.json
+
+# 切り出し作業用のスクリプト置き場（公開物ではない）
+_build/

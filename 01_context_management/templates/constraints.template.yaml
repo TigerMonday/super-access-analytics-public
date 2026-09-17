@@ -1,0 +1,14 @@
+# 前提・制約(gotchas)・命名規則・未解決課題テンプレート → context/<client_id>/constraints.yaml
+gotchas:                   # サイト固有の注意点（誤分析防止・各エージェントが分析前に確認）
+  - id: gotcha_001
+    title: ""
+    detail: ""
+naming_conventions:        # クライアント別の命名規則override（任意）
+  utm_source: ""
+  utm_medium: ""
+  notes: "全社デフォルトは parameter_management/standards/naming-conventions.md"
+open_questions:            # 仮説・未解決課題
+  - id: q_001
+    question: ""
+    hypothesis: ""
+    status: open           # open / investigating / resolved

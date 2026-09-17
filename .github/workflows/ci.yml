@@ -1,0 +1,59 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@d0d8abe699bfb85fec6de9f7adb5ae17292296ff # v6
+        with:
+          python-version: "3.11"
+          enable-cache: true
+      - name: 計測設計テスト
+        working-directory: 02_basic_measurement/measurement_design
+        run: uv run --locked --group dev python -m pytest
+      - name: 基本分析テスト
+        working-directory: 04_traffic_analysis/parameter_management
+        run: uv run --locked --group dev python -m pytest
+      - name: コンテキスト管理テスト
+        working-directory: 01_context_management
+        run: uv run --locked --group dev python -m pytest
+      - name: レポート変換テスト
+        working-directory: common/report_export
+        run: |
+          uv run --locked playwright install --with-deps chromium
+          uv run --locked --extra dev python -m pytest -q
+      - name: 変換ブリッジテスト
+        working-directory: common/report_export_bridge
+        run: uv run --locked --extra dev python -m pytest
+      - name: 共通ツール・レポート一覧テスト
+        run: uv run --locked --project 04_traffic_analysis/parameter_management python -m pytest tools/tests tools/test_report_quality_check.py tools/test_site_improvement_report.py tools/test_validate_market_report.py tools/test_validate_measurement_report.py tools/test_validate_report_connections.py common/ga4_fetch/tests common/report_index/tests 03_external_research/web_research/competitor-ahrefs-analysis/tests
+      - name: 公開前検査
+        run: |
+          uv run --locked --project 04_traffic_analysis/parameter_management python tools/check_links.py
+          # 非公開の社名・顧客名辞書は公開runnerへ置かない。CIでは辞書不要の検査を行い、
+          # 公開担当者が手元の辞書を使う完全検査と組み合わせる。
+          uv run --locked --project 04_traffic_analysis/parameter_management python tools/leak_check.py --pattern-only
+      - name: URL撮影のセキュリティテスト
+        working-directory: 05_campaign_optimization/2_target_page_plan/creation
+        run: |
+          npm ci --ignore-scripts
+          node --test tests/*.test.mjs

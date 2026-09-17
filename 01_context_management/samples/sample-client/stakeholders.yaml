@@ -1,0 +1,16 @@
+stakeholders:
+  - name: 山田 太郎
+    role: マーケ責任者（決裁者）
+    org: 株式会社サンプル  # leak-ok: ダミー会社名の統一表記（実在の社名ではない）
+    contact: yamada@example.com
+    notes: 施策の最終承認者
+  - name: 鈴木 花子
+    role: Web担当（実務窓口）
+    org: 株式会社サンプル  # leak-ok: ダミー会社名の統一表記（実在の社名ではない）
+    contact: suzuki@example.com
+    notes: GTM・GA4の編集権限保有
+  - name: 佐藤 一郎
+    role: 自社側担当
+    org: 自社
+    contact: ""
+    notes: ""

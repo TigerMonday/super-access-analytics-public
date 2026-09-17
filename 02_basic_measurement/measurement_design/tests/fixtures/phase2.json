@@ -1,0 +1,14 @@
+{
+  "events_30d": [
+    { "eventName": "page_view", "eventCount": "15000", "totalUsers": "8000" },
+    { "eventName": "purchase", "eventCount": "1200", "totalUsers": "1100" },
+    { "eventName": "FormSubmit", "eventCount": "300", "totalUsers": "290" },
+    { "eventName": "click_CTA", "eventCount": "500", "totalUsers": "450" }
+  ],
+  "key_event_firing": [
+    { "eventName": "purchase", "eventCount": "1200" }
+  ],
+  "channel_performance": [
+    { "sessionDefaultChannelGroup": "Organic Search", "sessions": "5000" }
+  ]
+}

@@ -1,0 +1,4 @@
+# 公開してよいことを目視確認したバイナリだけを登録する。
+# 書式: SHA256  リポジトリ相対パス
+# 埋め込み画像を含むテキストは、改行をLFに正規化したUTF-8全文のSHA256を使う。
+8a618e93fc5e15839d1a1df6b3576a39a0b2b78a526554d426cda52e96a1121c  common/report_export/fixtures/charts/sample_chart.png

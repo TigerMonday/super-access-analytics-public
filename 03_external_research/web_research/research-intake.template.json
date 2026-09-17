@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "subject": "",
+  "updated_at": "",
+  "responses": {
+    "decision_purpose": {"status": "not_asked", "source": "", "value": ""},
+    "target_scope": {"status": "not_asked", "source": "", "value": ""},
+    "research_period": {"status": "not_asked", "source": "", "value": ""},
+    "output_format": {"status": "not_asked", "source": "", "value": ""},
+    "source_requirements": {"status": "not_asked", "source": "", "value": ""},
+    "existing_materials": {"status": "not_asked", "source": "", "value": ""},
+    "priority_customer": {"status": "not_asked", "source": "", "value": ""},
+    "customer_voice": {"status": "not_asked", "source": "", "value": ""},
+    "why_chosen": {"status": "not_asked", "source": "", "value": ""},
+    "why_not_chosen": {"status": "not_asked", "source": "", "value": ""},
+    "service_limits": {"status": "not_asked", "source": "", "value": ""}
+  },
+  "competitors": {
+    "status": "not_asked",
+    "source": "",
+    "selection_mode": "",
+    "user_response": "",
+    "items": []
+  }
+}

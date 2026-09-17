@@ -1,0 +1,17 @@
+# クライアント基本情報テンプレート → context/<client_id>/profile.yaml にコピーして記入
+client:
+  client_id: ""            # フォルダ名と一致させる識別子（英数字・- _ のみ）
+  name: ""                 # 正式名称（必須）
+  industry: ""             # 業種
+  business: ""             # 事業内容
+  site_url: ""             # 主要サイトURL
+  business_model: ""       # toB / toC / both
+  target: ""               # ターゲット像
+  notes: ""                # 背景・特記事項（自由記述）
+aliases: []                 # client_id の別名（旧clientフォルダ名・略称・表記ゆれ等）。例: ["old-company-name", "OLDCO"]
+# preferences:               # 利用者側の運用上の好み（軽量受付フローで一度だけ聞いて保存する）
+#   output_formats: []       # 成果物の書き出し先。空=MDのみ。例: ["html"] / ["html", "pdf"] / ["gdoc"]
+#   # gdoc / gsheet を選ぶ場合はURLも必須（サービスアカウントは自分でファイルを作れないため、
+#   # 利用者が先に空のファイルを作りサービスアカウントに編集者で共有した先のURLを書く）
+#   # google_doc_url: null
+#   # google_sheet_url: null

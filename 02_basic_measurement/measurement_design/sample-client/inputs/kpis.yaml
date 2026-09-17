@@ -1,0 +1,20 @@
+kpis:
+  - kpi_id: kpi_001
+    name: 資料ダウンロード数
+    target_metric: イベント数
+    target_value:
+      goal: 200
+      unit: 件/月
+    description: コーポレートサイト経由の資料ダウンロード完了
+    related_pages:
+      - page_id: page_download
+
+  - kpi_id: kpi_002
+    name: お問い合わせ完了数
+    target_metric: イベント数
+    target_value:
+      goal: 50
+      unit: 件/月
+    description: お問い合わせフォームの送信完了
+    related_pages:
+      - page_id: page_contact_complete

@@ -1,0 +1,21 @@
+initiatives:
+  - initiative_id: init_001
+    name: ホワイトペーパーLP公開
+    period:
+      start: "2026-03-01"
+      end: "2026-03-31"
+    description: 業界別ホワイトペーパー3本のLPを公開しリード獲得
+    related_kpi: kpi_001
+    result: |
+      DL数が前月比 +45%。直帰率はやや上昇したがリード品質は維持。
+    outputs:
+      - outputs/sample-client/2026-04-01_report.html
+  - initiative_id: init_002
+    name: お問い合わせフォーム改善
+    period:
+      start: "2026-04-15"
+      end: null
+    description: フォーム項目を12→7に削減、EFO実施
+    related_kpi: kpi_002
+    result: ""
+    outputs: []
