@@ -173,7 +173,7 @@ wheels = [
 
 [[package]]
 name = "google-analytics-data"
-version = "0.23.0"
+version = "0.23.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "google-api-core", extra = ["grpc"] },
@@ -182,9 +182,9 @@ dependencies = [
     { name = "proto-plus" },
     { name = "protobuf" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/f8/09/76553c6ec3e277d38486f7619d8bad631745fb6bdd486027e956dea8a8c7/google_analytics_data-0.23.0.tar.gz", hash = "sha256:8799b8829ca175e11385008aedb9f2f0aaf5c78c2b69f7570712ee46b190b08a", size = 232484, upload-time = "2026-06-03T14:52:16.145Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/05/98/5baf9d0192c638d4955e1cc811a1b5bfda5af4c5136eb25f41d5b9a4a66b/google_analytics_data-0.23.1.tar.gz", hash = "sha256:d13ebb89251e3fa50e7233f5a4cace6933be159c0118acd60e2f397c79e39cbb", size = 235580, upload-time = "2026-09-17T20:30:07.606Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/df/28/56dda8a3ba26c09a26592c1ae701f0092d9c0f8e620df073783dad733ddc/google_analytics_data-0.23.0-py3-none-any.whl", hash = "sha256:ba21edbe7f2aa61424651b11b06f81fa4ceed5db5581ef2ca2af0d189b77c0bd", size = 199547, upload-time = "2026-06-03T14:51:25.009Z" },
+    { url = "https://files.pythonhosted.org/packages/37/d9/e2271a6d5fade5ea050887a0db1b9213eefb61d332b13bff780fc583e699/google_analytics_data-0.23.1-py3-none-any.whl", hash = "sha256:63e9e52a4887917f4c7a028e47cebdb61da99616112db6e402e0d50ab28e968a", size = 201322, upload-time = "2026-09-17T20:29:30.941Z" },
 ]
 
 [[package]]
